@@ -2,6 +2,48 @@
 
 A comprehensive medical imaging application for neuroimaging slice visualization with explainable AI analysis for early Alzheimer's disease detection. This application consists of two main components: a neuroimaging slice viewer for medical image analysis and an XAI (Explainable AI) analysis tool for automated brain scan interpretation.
 
+## Table of Contents
+
+- [Features](#features)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Author](#author)
+- [Institutional Affiliation](#institutional-affiliation)
+- [License](#license)
+- [Citation](#citation)
+- [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
+- [Contact](#contact)
+
+## Features
+
+### Neuroimaging Slice Viewer
+- Multi-planar viewing (axial, coronal, sagittal)
+- Window/level adjustment for optimal contrast
+- Zoom and pan functionality with crosshair navigation
+- Drawing and annotation tools with customizable colors and brush sizes
+- Distance measurement capabilities with real-world units
+- 3D surface model generation using marching cubes algorithm
+- Session save/load functionality for workflow continuity
+- Comprehensive patient information management
+- Undo/redo functionality for all operations
+- Multiple view layouts with maximize/minimize options
+
+### XAI Analysis Tool
+- AI-powered early Alzheimer's disease detection using EfficientNetV2B0
+- Grad-CAM++ attention visualization for model interpretability
+- Guided backpropagation analysis for enhanced feature attribution
+- Consensus attention mapping combining multiple XAI techniques
+- Brain tissue masking and automatic preprocessing
+- Statistical analysis of attention patterns
+- Medical report generation with clinical recommendations
+- Support for multiple disease classifications (CN, EMCI, LMCI)
+- Interactive visualization windows with detailed analysis
+
 ## System Requirements
 
 ### Minimum Requirements
@@ -16,766 +58,769 @@ A comprehensive medical imaging application for neuroimaging slice visualization
 - Windows 10 or later (64-bit)
 - Linux (Ubuntu 18.04+, CentOS 7+, Fedora 30+)
 
-## Installation Instructions
+## Installation
 
-### macOS Installation
+### Step 1: Prerequisites
 
-#### Step 1: Install System Dependencies
+Ensure you have Python 3.8+ installed:
 
-First, install Homebrew package manager if not already installed:
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-Install Python and required system packages:
-```bash
-brew install python python-tk
-```
-
-Verify Python installation:
 ```bash
 python3 --version
 ```
 
-#### Step 2: Download Project Files
+If Python is not installed, download from [python.org](https://www.python.org/downloads/)
 
-Clone the repository or download the project files:
+### Step 2: Clone Repository
+
 ```bash
 git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
 cd Lightweight_MRI_EAD_Detection
 ```
 
-If downloading manually, extract the files and navigate to the project directory:
-```bash
-cd /path/to/Lightweight_MRI_EAD_Detection
-```
+### Step 3: Create Virtual Environment
 
-#### Step 3: Create Virtual Environment
-
-Create a new virtual environment for the project:
 ```bash
 python3 -m venv neuroimaging_env
 ```
 
-Activate the virtual environment:
+### Step 4: Activate Virtual Environment
+
+**macOS/Linux:**
 ```bash
 source neuroimaging_env/bin/activate
 ```
 
-Verify virtual environment is active (you should see the environment name in your terminal prompt):
-```bash
-which python
-```
-
-#### Step 4: Install Python Dependencies
-
-Upgrade pip to the latest version:
-```bash
-pip install --upgrade pip
-```
-
-Install all required Python packages:
-```bash
-pip install tkinter matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
-```
-
-Wait for all packages to download and install. This may take several minutes depending on your internet connection.
-
-#### Step 5: Verify Installation
-
-Check that all packages are installed correctly:
-```bash
-pip list
-```
-
-Navigate to the application directory:
-```bash
-cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-```
-
-#### Step 6: Run the Application
-
-Start the main neuroimaging slice viewer application:
-```bash
-python manual.py
-```
-
-The application should launch with a loading screen followed by the main interface.
-
-### Windows Installation
-
-#### Step 1: Install Python
-
-Download Python 3.8 or later from the official Python website (python.org):
-- Go to https://www.python.org/downloads/
-- Download the latest Python 3.x version for Windows
-- Run the installer with the following important settings:
-  - Check "Add Python to PATH" during installation
-  - Choose "Customize installation"
-  - Ensure "tkinter/Tk and IDLE" is selected
-  - Choose "Install for all users" if you have administrator privileges
-
-Verify Python installation by opening Command Prompt and running:
-```cmd
-python --version
-```
-
-#### Step 2: Download Project Files
-
-Download the project files to your computer. If using Git:
-```cmd
-git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
-cd Lightweight_MRI_EAD_Detection
-```
-
-If downloading manually, extract the files to a directory such as:
-```cmd
-C:\Users\YourUsername\Documents\Lightweight_MRI_EAD_Detection
-```
-
-Navigate to the project directory:
-```cmd
-cd C:\path\to\Lightweight_MRI_EAD_Detection
-```
-
-#### Step 3: Create Virtual Environment
-
-Open Command Prompt as Administrator (recommended) or regular Command Prompt and navigate to the project directory:
-```cmd
-cd C:\path\to\Lightweight_MRI_EAD_Detection
-```
-
-Create a virtual environment:
-```cmd
-python -m venv neuroimaging_env
-```
-
-Activate the virtual environment:
+**Windows Command Prompt:**
 ```cmd
 neuroimaging_env\Scripts\activate
 ```
 
-You should see (neuroimaging_env) at the beginning of your command prompt.
-
-#### Step 4: Install Python Dependencies
-
-Upgrade pip to the latest version:
-```cmd
-pip install --upgrade pip
+**Windows PowerShell:**
+```powershell
+neuroimaging_env\Scripts\Activate.ps1
 ```
 
-Install all required Python packages:
-```cmd
-pip install matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
-```
+### Step 5: Upgrade pip
 
-This installation process may take 10-15 minutes depending on your internet speed and computer performance.
-
-#### Step 5: Verify Installation
-
-Check that all packages are installed correctly:
-```cmd
-pip list
-```
-
-Navigate to the application directory:
-```cmd
-cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-```
-
-#### Step 6: Run the Application
-
-Start the main neuroimaging slice viewer application:
-```cmd
-python manual.py
-```
-
-The application should launch with a loading screen followed by the main interface.
-
-### Linux Installation (Ubuntu/Debian)
-
-#### Step 1: Update System and Install Dependencies
-
-Update your package manager:
-```bash
-sudo apt update
-sudo apt upgrade
-```
-
-Install Python and system dependencies:
-```bash
-sudo apt install python3 python3-pip python3-venv python3-tk
-```
-
-Install additional system libraries required for graphics and GUI:
-```bash
-sudo apt install libgl1-mesa-glx libegl1-mesa libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6
-```
-
-Install development tools and libraries:
-```bash
-sudo apt install build-essential python3-dev libffi-dev libssl-dev
-```
-
-Verify Python installation:
-```bash
-python3 --version
-```
-
-#### Step 2: Download Project Files
-
-Clone the repository or download the project files:
-```bash
-git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
-cd Lightweight_MRI_EAD_Detection
-```
-
-If downloading manually:
-```bash
-cd /path/to/Lightweight_MRI_EAD_Detection
-```
-
-#### Step 3: Create Virtual Environment
-
-Create a virtual environment:
-```bash
-python3 -m venv neuroimaging_env
-```
-
-Activate the virtual environment:
-```bash
-source neuroimaging_env/bin/activate
-```
-
-Verify the virtual environment is active:
-```bash
-which python
-```
-
-#### Step 4: Install Python Dependencies
-
-Upgrade pip to the latest version:
 ```bash
 pip install --upgrade pip
 ```
 
-Install all required Python packages:
+### Step 6: Install Dependencies
+
 ```bash
-pip install matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
+pip install tkinter matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
 ```
 
-This installation may take 15-20 minutes depending on your system and internet connection.
+### Step 7: Verify Installation
 
-#### Step 5: Verify Installation
-
-Check that all packages are installed correctly:
 ```bash
 pip list
+python -c "import tensorflow, cv2, matplotlib, numpy, scipy, skimage, SimpleITK, PIL; print('All imports successful')"
 ```
 
-Test tkinter installation:
-```bash
-python -c "import tkinter; print('tkinter working')"
-```
+### Platform-Specific Installation Notes
 
-Navigate to the application directory:
-```bash
-cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-```
-
-#### Step 6: Run the Application
-
-Start the main neuroimaging slice viewer application:
-```bash
-python manual.py
-```
-
-The application should launch successfully.
-
-### Linux Installation (CentOS/RHEL)
-
-#### Step 1: Update System and Install Dependencies
-
-Update your system:
-```bash
-sudo yum update
-```
-
-Install Python and development tools:
-```bash
-sudo yum install python3 python3-pip python3-devel
-```
-
-Install additional system libraries:
-```bash
-sudo yum install tkinter gcc openssl-devel libffi-devel
-```
-
-Install EPEL repository for additional packages:
-```bash
-sudo yum install epel-release
-```
-
-Install graphics libraries:
-```bash
-sudo yum install mesa-libGL mesa-libEGL libXrandr libXss libXcursor libXcomposite alsa-lib libXi libXtst
-```
-
-#### Step 2: Download Project Files
-
-Clone the repository or download project files:
-```bash
-git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
-cd Lightweight_MRI_EAD_Detection
-```
-
-If downloading manually:
-```bash
-cd /path/to/Lightweight_MRI_EAD_Detection
-```
-
-#### Step 3: Create Virtual Environment
-
-Create a virtual environment:
-```bash
-python3 -m venv neuroimaging_env
-```
-
-Activate the virtual environment:
-```bash
-source neuroimaging_env/bin/activate
-```
-
-#### Step 4: Install Python Dependencies
-
-Upgrade pip:
-```bash
-pip install --upgrade pip
-```
-
-Install required packages:
-```bash
-pip install matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
-```
-
-#### Step 5: Verify Installation
-
-Check installed packages:
-```bash
-pip list
-```
-
-Navigate to application directory:
-```bash
-cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-```
-
-#### Step 6: Run the Application
-
-Start the application:
-```bash
-python manual.py
-```
-
-### Linux Installation (Fedora)
-
-#### Step 1: Update System and Install Dependencies
-
-Update your system:
-```bash
-sudo dnf update
-```
-
-Install Python and development tools:
-```bash
-sudo dnf install python3 python3-pip python3-devel python3-tkinter
-```
-
-Install additional system libraries:
-```bash
-sudo dnf install gcc openssl-devel libffi-devel
-```
-
-Install graphics libraries:
-```bash
-sudo dnf install mesa-libGL mesa-libEGL libXrandr libXss libXcursor libXcomposite alsa-lib libXi libXtst
-```
-
-#### Step 2: Download Project Files
-
-Clone the repository:
-```bash
-git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
-cd Lightweight_MRI_EAD_Detection
-```
-
-#### Step 3: Create Virtual Environment
-
-Create virtual environment:
-```bash
-python3 -m venv neuroimaging_env
-```
-
-Activate virtual environment:
-```bash
-source neuroimaging_env/bin/activate
-```
-
-#### Step 4: Install Python Dependencies
-
-Upgrade pip:
-```bash
-pip install --upgrade pip
-```
-
-Install required packages:
-```bash
-pip install matplotlib numpy tensorflow opencv-python scipy scikit-image SimpleITK pillow
-```
-
-#### Step 5: Verify Installation
-
-Check installed packages:
-```bash
-pip list
-```
-
-Navigate to application directory:
-```bash
-cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-```
-
-#### Step 6: Run the Application
-
-Start the application:
-```bash
-python manual.py
-```
-
-## Application Usage
-
-### Main Application: Neuroimaging Slice Viewer
-
-The main application (manual.py) provides comprehensive tools for medical image analysis and visualization.
-
-#### Loading Medical Images
-
-1. **Start the application**: The main window will appear with a toolbar and empty viewing panels
-2. **Load a volume**: Click the "Load Volume" button in the toolbar
-3. **Select file**: Choose a NIfTI file (.nii or .nii.gz) from the file dialog
-4. **View confirmation**: The image will appear in the three orthogonal views (axial, coronal, sagittal)
-
-#### Navigation and Viewing
-
-1. **Slice navigation**: Use the slice position sliders on the left panel to navigate through different slices
-2. **Window/Level adjustment**: Modify the Window and Level sliders to optimize image contrast and brightness
-3. **Zoom functionality**: Use Ctrl+scroll wheel to zoom in/out on any view
-4. **Pan images**: Use middle mouse button to pan around zoomed images
-5. **Crosshair navigation**: Click on any view to update the crosshair position across all views
-
-#### Image Analysis Tools
-
-1. **Measurement tool**: 
-   - Enable "Measure" checkbox in the toolbar
-   - Click two points to create a distance measurement
-   - View measurements in the Annotations tab
-
-2. **Drawing tool**:
-   - Enable "Draw" checkbox in the toolbar
-   - Click and drag to draw annotations on images
-   - Adjust brush size and color in the controls panel
-   - Add comments to drawings for documentation
-
-3. **Zoom selection**:
-   - Enable "Zoom Select" checkbox
-   - Click and drag to select an area for zooming
-   - The view will zoom to the selected region
-
-#### Session Management
-
-1. **Save session**: Click "Save Session" to save your current work including annotations and settings
-2. **Load session**: Click "Load Session" to restore a previously saved session
-3. **Patient information**: Click "Patient Info" to edit patient details
-4. **Export reports**: Use "Save Report" to generate comprehensive analysis reports
-
-#### Launching XAI Analysis
-
-1. **Access analysis tool**: Click the "Launch Analysis Tool" button in the toolbar
-2. **Automatic launch**: The XAI analysis application will start in a separate window
-3. **Continue work**: Both applications can run simultaneously
-
-### XAI Analysis Tool: Explainability Visuals
-
-The XAI analysis tool (explainability_visuals.py) provides AI-powered analysis of brain MRI images with explainable visualizations.
-
-#### Loading Images for Analysis
-
-1. **Application startup**: The XAI tool opens with multiple empty analysis windows
-2. **Upload image**: Click "Upload Coronal MRI Slice" button in the toolbar
-3. **Select file**: Choose a PNG or JPG image file (coronal brain slice)
-4. **Processing**: The application will automatically process the image and generate multiple analysis views
-
-#### Understanding Analysis Results
-
-The tool generates multiple visualization windows:
-
-1. **Original MRI**: Displays the input image with metadata overlay
-2. **Prediction Analysis**: Shows diagnostic confidence scores and clinical interpretation
-3. **Confidence Map**: Visual representation of model certainty across different classes
-4. **Class Probabilities**: Detailed statistical breakdown of prediction probabilities
-5. **Grad-CAM++ visualizations**: Heat maps showing areas of focus for AI decision-making
-6. **Guided Grad-CAM++ analysis**: Enhanced attention maps with statistical analysis
-7. **Consensus analysis**: Combined visualization from multiple AI techniques
-8. **Medical Report**: Comprehensive clinical report with recommendations
-
-#### Interacting with Analysis Windows
-
-1. **Window maximization**: Click "Max" button on any window to view it in full size
-2. **Window restoration**: Click "Min" button to restore normal view
-3. **Navigation tools**: Use toolbar buttons to zoom, pan, and navigate through visualizations
-4. **Save results**: Click "Save Generated Medical Report" to export all analysis results
-
-#### Interpreting Results
-
-1. **Confidence scores**: Higher scores indicate greater AI certainty in diagnosis
-2. **Heat maps**: Red/yellow areas show regions of interest for AI decision-making
-3. **Clinical recommendations**: Follow the recommendations provided in the medical report
-4. **Statistical analysis**: Review detailed statistics for research and validation purposes
-
-## Test Data and Examples
-
-### Sample Data Location
-
-The project includes test data in the `test_inputs_for_tools` directory:
-
-```
-test_inputs_for_tools/
-├── Neuroimaging_Slice_Viewer/
-│   └── skull_stripped_mri.nii
-└── Analysis_Tool/
-    ├── CN/          # Cognitively Normal samples
-    ├── EMCI/        # Early Mild Cognitive Impairment samples
-    └── LMCI/        # Late Mild Cognitive Impairment samples
-```
-
-### Testing the Slice Viewer
-
-1. **Load test volume**:
-   - Start the slice viewer application
-   - Click "Load Volume"
-   - Navigate to `test_inputs_for_tools/Neuroimaging_Slice_Viewer/`
-   - Select `skull_stripped_mri.nii`
-
-2. **Explore functionality**:
-   - Navigate through slices using the controls
-   - Try measurement and drawing tools
-   - Experiment with window/level adjustments
-   - Test session save/load functionality
-
-### Testing the XAI Analysis Tool
-
-1. **Load test images**:
-   - Start the XAI analysis tool
-   - Click "Upload Coronal MRI Slice"
-   - Navigate to `test_inputs_for_tools/Analysis_Tool/CN/` (or EMCI/LMCI)
-   - Select any PNG file
-
-2. **Review analysis**:
-   - Examine all generated visualization windows
-   - Maximize different windows for detailed view
-   - Review the medical report for clinical interpretation
-   - Test the save functionality
-
-## Troubleshooting
-
-### Installation Issues
-
-#### Python Installation Problems
-
-**Issue**: "python command not found"
-- **macOS**: Install Python via Homebrew: `brew install python`
-- **Windows**: Reinstall Python and ensure "Add to PATH" is checked
-- **Linux**: Install using package manager: `sudo apt install python3`
-
-**Issue**: "pip command not found"
-- **All platforms**: Python may be installed without pip
-- **Solution**: Install pip manually or reinstall Python with pip included
-
-#### Virtual Environment Issues
-
-**Issue**: Virtual environment activation fails
-- **macOS/Linux**: Check file permissions: `chmod +x neuroimaging_env/bin/activate`
-- **Windows**: Try using `neuroimaging_env\Scripts\activate.bat`
-- **All platforms**: Ensure you're in the correct directory
-
-**Issue**: "Permission denied" errors
-- **macOS/Linux**: Use `sudo` for system-wide installations or fix permissions
-- **Windows**: Run Command Prompt as Administrator
-
-### Package Installation Issues
-
-#### TensorFlow Installation Problems
-
-**Issue**: TensorFlow installation fails on macOS M1/M2
-- **Solution**: Use Apple Silicon optimized version:
+#### macOS with Apple Silicon
 ```bash
 pip install tensorflow-macos tensorflow-metal
 ```
 
-**Issue**: TensorFlow GPU support issues
-- **Solution**: Install CUDA toolkit for NVIDIA GPUs or use CPU-only version
-
-**Issue**: Memory errors during installation
-- **Solution**: Increase virtual memory or install packages one by one
-
-#### Graphics and GUI Issues
-
-**Issue**: "ImportError: No module named 'tkinter'"
-- **macOS**: Install tkinter: `brew install python-tk`
-- **Ubuntu/Debian**: Install tkinter: `sudo apt install python3-tk`
-- **Windows**: Reinstall Python with tkinter enabled
-
-**Issue**: OpenGL errors or graphics issues
-- **Linux**: Install Mesa drivers: `sudo apt install mesa-utils`
-- **All platforms**: Update graphics drivers
-- **Virtual machines**: Enable 3D acceleration in VM settings
-
-**Issue**: "cannot connect to X server" on Linux
-- **Solution**: Ensure GUI session is running or use X11 forwarding for remote connections:
+#### Linux Additional Dependencies
 ```bash
-ssh -X username@hostname
+sudo apt update
+sudo apt install python3-tk libgl1-mesa-glx libegl1-mesa libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6
 ```
 
-### Runtime Issues
-
-#### Memory and Performance Problems
-
-**Issue**: "Out of memory" errors
-- **Solution**: Ensure at least 8GB RAM available
-- **Solution**: Close other applications before analysis
-- **Solution**: Increase virtual memory/swap space
-
-**Issue**: Application runs slowly
-- **Solution**: Use SSD storage for better I/O performance
-- **Solution**: Ensure adequate RAM available
-- **Solution**: Close unnecessary background applications
-
-#### File Loading Issues
-
-**Issue**: Cannot load NIfTI files
-- **Solution**: Verify file format and integrity
-- **Solution**: Try converting file format using medical imaging tools
-- **Solution**: Check file permissions
-
-**Issue**: Image files not loading in XAI tool
-- **Solution**: Ensure files are PNG or JPG format
-- **Solution**: Verify image dimensions are reasonable (not too large)
-- **Solution**: Check file path contains no special characters
-
-#### Application Crashes
-
-**Issue**: Application crashes on startup
-- **Solution**: Check all dependencies are installed correctly
-- **Solution**: Run from terminal to see error messages
-- **Solution**: Verify Python version compatibility
-
-**Issue**: Crashes during analysis
-- **Solution**: Monitor system resources (RAM, disk space)
-- **Solution**: Try with smaller image files
-- **Solution**: Restart application and try again
-
-### Platform-Specific Issues
-
-#### macOS Issues
-
-**Issue**: "App can't be opened" security warning
-- **Solution**: Go to System Preferences > Security & Privacy > Allow app
-
-**Issue**: Homebrew installation issues
-- **Solution**: Update Xcode command line tools: `xcode-select --install`
-
-#### Windows Issues
-
-**Issue**: Antivirus blocking installation
-- **Solution**: Temporarily disable antivirus during installation
-- **Solution**: Add Python and project directory to antivirus exclusions
-
-**Issue**: Long path names causing issues
-- **Solution**: Move project to shorter path (e.g., C:\neuroimaging\)
-
-#### Linux Issues
-
-**Issue**: Package manager permission errors
-- **Solution**: Use sudo for system package installation
-- **Solution**: Check user permissions and group membership
-
-**Issue**: Display issues in remote sessions
-- **Solution**: Enable X11 forwarding: `ssh -X`
-- **Solution**: Use VNC for full desktop remote access
-
-### Getting Help
-
-If you continue to experience issues:
-
-1. **Check system requirements**: Ensure your system meets minimum requirements
-2. **Verify installation steps**: Review installation steps for your platform
-3. **Check error messages**: Run applications from terminal to see detailed error messages
-4. **Update dependencies**: Ensure all packages are up to date
-5. **Try clean installation**: Remove virtual environment and reinstall from scratch
-
-### Log Files and Debugging
-
-To help diagnose issues:
-
-1. **Run with verbose output**:
+#### Windows with CUDA Support
 ```bash
-python manual.py --verbose
+pip install tensorflow-gpu
 ```
 
-2. **Check Python import errors**:
+## Usage
+
+### Starting the Applications
+
+#### Neuroimaging Slice Viewer
+
 ```bash
-python -c "import tensorflow, cv2, matplotlib, numpy, scipy, skimage, SimpleITK, PIL; print('All imports successful')"
+cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
+python manual.py
 ```
 
-3. **Monitor system resources**:
-- **macOS**: Activity Monitor
-- **Windows**: Task Manager
-- **Linux**: `htop` or `top`
+#### XAI Analysis Tool
 
-## File Structure and Organization
+```bash
+cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw/exnModel
+python explainability_visuals.py
+```
 
-### Project Directory Structure
+#### Alternative: Launch XAI Tool from Slice Viewer
+
+1. Start the slice viewer: `python manual.py`
+2. Click "Launch Analysis Tool" button in the toolbar
+3. XAI tool will open in a separate window
+
+### Loading and Using Test Data
+
+#### For Slice Viewer
+1. Start the slice viewer application
+2. Click "Load Volume" button
+3. Navigate to `test_inputs_for_tools/Neuroimaging_Slice_Viewer/`
+4. Select `skull_stripped_mri.nii`
+5. Use slice navigation controls to explore the volume
+6. Try measurement and drawing tools
+7. Save session using "Save Session" button
+
+#### For XAI Analysis Tool
+1. Start the XAI analysis tool
+2. Click "Upload Coronal MRI Slice" button
+3. Navigate to `test_inputs_for_tools/Analysis_Tool/CN/` (or EMCI/LMCI)
+4. Select any PNG file
+5. Wait for automatic processing (30-60 seconds)
+6. Review generated visualization windows
+7. Click "Max" on any window for detailed view
+8. Save results using "Save Generated Medical Report"
+
+### Basic Workflow
+
+#### Slice Viewer Operations
+
+1. **Load Volume**
+   ```
+   File → Load Volume → Select .nii/.nii.gz file
+   ```
+
+2. **Navigate Slices**
+   - Use slice position sliders on the left panel
+   - Mouse wheel scroll on any view
+   - Click on views to update crosshair position
+
+3. **Adjust Display**
+   - Window/Level sliders for contrast adjustment
+   - Colormap selection for different visualizations
+   - Zoom controls: Ctrl+scroll wheel or zoom select tool
+
+4. **Annotate and Measure**
+   - Enable "Draw" checkbox and draw with mouse
+   - Enable "Measure" checkbox and click two points for distance
+   - Customize colors, brush sizes, and opacity
+
+5. **Save Work**
+   ```
+   File → Save Session → Choose location and filename
+   ```
+
+6. **Generate Reports**
+   ```
+   File → Save Report → Select output directory
+   ```
+
+#### XAI Analysis Operations
+
+1. **Upload and Process**
+   - Upload coronal MRI slice (PNG/JPG format, 224x224 recommended)
+   - Wait for automatic AI processing
+   - Review prediction results and confidence scores
+
+2. **Examine Visualizations**
+   - Original MRI with metadata overlay
+   - Grad-CAM++ attention maps (raw, masked, overlay)
+   - Guided Grad-CAM++ enhanced visualizations
+   - Consensus maps combining multiple techniques
+   - Statistical analysis windows
+
+3. **Interpret Results**
+   - Check prediction confidence and class probabilities
+   - Review attention regions highlighted by AI
+   - Read clinical interpretation and recommendations
+   - Examine statistical metrics for validation
+
+4. **Export Results**
+   - Save comprehensive medical report with all visualizations
+   - Export includes original images, attention maps, and analysis
+
+### Keyboard Shortcuts
+
+- `Ctrl+O`: Load Volume
+- `Ctrl+S`: Save Report
+- `Ctrl+Shift+S`: Save Session
+- `Ctrl+Shift+O`: Load Session
+- `Ctrl+R`: Reset Layout
+- `Ctrl+0`: Reset Zoom
+- `Ctrl+Z`: Undo
+- `Ctrl+Y`: Redo
+- `ESC`: Cancel current operation (measurement, drawing)
+
+### Advanced Features
+
+#### 3D Model Generation
+1. Load a volume in the slice viewer
+2. Navigate to "3D" tab in control panel
+3. Adjust ISO threshold value
+4. Click "Generate 3D Model"
+5. Rotate and examine 3D visualization
+
+#### Session Management
+1. Save current state: annotations, measurements, view settings
+2. Load previous sessions to continue work
+3. Export comprehensive reports with all findings
+
+#### Custom Model Loading (XAI Tool)
+1. Click "Load Custom Model" in XAI tool
+2. Select your own trained Keras model file
+3. Tool automatically adapts to model output classes
+
+## Project Structure
 
 ```
 Lightweight_MRI_EAD_Detection/
+├── LICENSE                                    # CC BY-NC 4.0 License
+├── README.md                                  # This documentation
+├── CITATION.cff                              # Citation information
+├── CONTRIBUTING.md                           # Contribution guidelines
 ├── Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw/
-│   ├── manual.py                           # Main neuroimaging slice viewer application
-│   ├── loading_window.py                   # Loading screen component
+│   ├── manual.py                             # Main slice viewer application
+│   ├── loading_window.py                     # Loading screen component
 │   └── exnModel/
-│       ├── explainability_visuals.py       # XAI analysis tool
-│       └── TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras  # Pre-trained model
-│   └── visuals_of_application/             # Screenshots of Neuroimaging Slicer Viewer and Analysis Tool
-├── test_inputs_for_tools/                  # Sample data and test files
-│   ├── Analysis_Tool/                      # Test images for XAI analysis
-│   │   ├── CN/                            # Cognitively Normal samples
-│   │   ├── EMCI/                          # Early MCI samples
-│   │   └── LMCI/                          # Late MCI samples
-│   └── Neuroimaging_Slice_Viewer/         # Test data for slice viewer
-│       └── skull_stripped_mri.nii         # Sample NIfTI file
-├── preprocessing_tools/                    # Data preprocessing utilities
-│   ├── skull_stripping.py                 # Brain extraction tools
-│   └── slice_extraction.py                # Slice extraction utilities
-└── training/                              # Model training resources
-    ├── models/                            # Trained model files
-    ├── outputs/                           # Training results and metrics
-    └── training_scripts.ipynb             # Training notebooks
+│       ├── explainability_visuals.py         # XAI analysis tool
+│       └── TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras # Pre-trained model
+├── test_inputs_for_tools/                    # Sample data and test files
+│   ├── Analysis_Tool/                        # Test images for XAI analysis
+│   │   ├── CN/                              # Cognitively Normal samples
+│   │   ├── EMCI/                            # Early MCI samples  
+│   │   └── LMCI/                            # Late MCI samples
+│   └── Neuroimaging_Slice_Viewer/           # Test data for slice viewer
+│       └── skull_stripped_mri.nii           # Sample NIfTI file
+├── preprocessing_tools/                      # Data preprocessing utilities
+│   ├── skull_stripping.py                   # Brain extraction tools
+│   └── slice_extraction.py                  # Slice extraction utilities
+├── training/                                # Model training resources
+│   ├── models/                              # Trained model files
+│   ├── outputs/                             # Training results and metrics
+│   └── training_scripts.ipynb              # Training notebooks
+└── docs/                                   # Additional documentation
 ```
 
-### Key Files Description
+## Testing
 
-- **manual.py**: Main application entry point for the neuroimaging slice viewer
-- **explainability_visuals.py**: Standalone XAI analysis tool for AI-powered brain scan analysis
-- **loading_window.py**: Shared loading screen component used by both applications
-- **TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras**: Pre-trained EfficientNetV2B0 model for early Alzheimer's detection
+### Quick Functionality Test
 
-This comprehensive setup provides both applications with full functionality for medical image analysis and AI-powered diagnostic assistance.
+```bash
+# Navigate to project directory
+cd Lightweight_MRI_EAD_Detection
+
+# Test slice viewer imports
+cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
+python -c "import manual; print('Slice viewer imports successful')"
+
+# Test XAI tool imports
+cd exnModel
+python -c "import explainability_visuals; print('XAI tool imports successful')"
+
+# Test all required packages
+python -c "
+import tkinter
+import matplotlib
+import numpy
+import tensorflow
+import cv2
+import scipy
+import skimage
+import SimpleITK
+import PIL
+print('All packages successfully imported')
+"
+```
+
+### Test with Sample Data
+
+#### Slice Viewer Test
+```bash
+cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
+python manual.py
+```
+Then in the GUI:
+1. Click "Load Volume"
+2. Navigate to `../test_inputs_for_tools/Neuroimaging_Slice_Viewer/`
+3. Select `skull_stripped_mri.nii`
+4. Verify three orthogonal views appear
+5. Test slice navigation and zoom functionality
+
+#### XAI Analysis Test
+```bash
+cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw/exnModel
+python explainability_visuals.py
+```
+Then in the GUI:
+1. Click "Upload Coronal MRI Slice"
+2. Navigate to `../../test_inputs_for_tools/Analysis_Tool/CN/`
+3. Select any PNG file
+4. Wait for processing to complete
+5. Verify multiple analysis windows appear
+6. Test maximize/minimize functionality
+
+### Automated Testing
+
+```bash
+# Create test script
+cat > test_installation.py << 'EOF'
+#!/usr/bin/env python3
+import sys
+import subprocess
+
+def test_imports():
+    try:
+        import tkinter
+        import matplotlib
+        import numpy
+        import tensorflow
+        import cv2
+        import scipy
+        import skimage
+        import SimpleITK
+        import PIL
+        print("✓ All packages imported successfully")
+        return True
+    except ImportError as e:
+        print(f"✗ Import failed: {e}")
+        return False
+
+def test_tensorflow():
+    try:
+        import tensorflow as tf
+        print(f"✓ TensorFlow version: {tf.__version__}")
+        print(f"✓ GPU available: {tf.config.list_physical_devices('GPU')}")
+        return True
+    except Exception as e:
+        print(f"✗ TensorFlow test failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    print("Testing Neuroimaging Software Installation...")
+    print("-" * 50)
+    
+    success = True
+    success &= test_imports()
+    success &= test_tensorflow()
+    
+    if success:
+        print("\n✓ Installation test passed!")
+        sys.exit(0)
+    else:
+        print("\n✗ Installation test failed!")
+        sys.exit(1)
+EOF
+
+python test_installation.py
+```
+
+## Troubleshooting
+
+### Common Installation Issues
+
+#### Python Import Errors
+```bash
+# Verify Python version (must be 3.8+)
+python3 --version
+
+# Check if virtual environment is activated
+which python
+# Should show path to neuroimaging_env
+
+# Verify package installation
+pip list | grep tensorflow
+pip list | grep opencv
+
+# Reinstall problematic packages
+pip uninstall tensorflow opencv-python
+pip install tensorflow opencv-python
+```
+
+#### TensorFlow Issues
+
+**For Apple Silicon Macs:**
+```bash
+pip uninstall tensorflow
+pip install tensorflow-macos tensorflow-metal
+```
+
+**For NVIDIA GPU Support:**
+```bash
+pip install tensorflow-gpu
+# Ensure CUDA and cuDNN are installed
+```
+
+**Memory Issues:**
+```bash
+# Limit TensorFlow memory growth
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+```
+
+#### Graphics and GUI Issues
+
+**Linux Display Issues:**
+```bash
+sudo apt update
+sudo apt install mesa-utils libgl1-mesa-glx
+sudo apt install python3-tk
+
+# Test OpenGL
+glxinfo | grep OpenGL
+
+# For remote sessions
+ssh -X username@hostname
+export DISPLAY=:0
+```
+
+**macOS GUI Issues:**
+```bash
+# Install tkinter support
+brew install python-tk
+
+# For conda environments
+conda install tk
+```
+
+**Windows Graphics Issues:**
+```cmd
+# Update graphics drivers
+# Enable hardware acceleration in display settings
+# Run as administrator if permission issues
+```
+
+#### Memory and Performance Issues
+
+**Insufficient Memory:**
+- Close other applications
+- Increase virtual memory/swap space
+- Use smaller image sizes for XAI analysis
+- Process images individually rather than in batches
+
+**Slow Performance:**
+```bash
+# Check available memory
+free -h  # Linux
+vm_stat # macOS
+
+# Monitor CPU usage during processing
+top  # Linux/macOS
+# Task Manager on Windows
+```
+
+#### File Format Issues
+
+**NIfTI Loading Problems:**
+```bash
+# Verify file integrity
+python -c "
+import SimpleITK as sitk
+image = sitk.ReadImage('path/to/your/file.nii')
+print(f'Image size: {image.GetSize()}')
+print(f'Spacing: {image.GetSpacing()}')
+"
+```
+
+**Image Format Issues (XAI Tool):**
+- Ensure images are PNG or JPG format
+- Recommended size: 224x224 pixels
+- Convert if necessary:
+```bash
+# Using ImageMagick
+convert input.dcm -resize 224x224 output.png
+
+# Using Python
+python -c "
+from PIL import Image
+img = Image.open('input.jpg')
+img = img.resize((224, 224))
+img.save('output.png')
+"
+```
+
+### Error Messages and Solutions
+
+**"ImportError: No module named 'tkinter'"**
+```bash
+# Ubuntu/Debian
+sudo apt install python3-tk
+
+# CentOS/RHEL
+sudo yum install tkinter
+
+# macOS
+brew install python-tk
+```
+
+**"Could not load dynamic library 'libcudart.so'"**
+```bash
+# Install CUDA toolkit
+sudo apt install nvidia-cuda-toolkit
+# Or download from NVIDIA website
+```
+
+**"Failed to get convolution algorithm"**
+```bash
+# TensorFlow GPU memory issue
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+# Or use CPU-only version
+pip install tensorflow-cpu
+```
+
+**Application crashes on startup:**
+```bash
+# Run with verbose output
+python manual.py --verbose
+
+# Check system resources
+df -h  # Disk space
+free -h  # Memory
+```
+
+### Getting Help
+
+1. **Check system requirements** - Ensure your system meets minimum requirements
+2. **Verify installation steps** - Review installation commands for your platform  
+3. **Check error messages** - Run applications from terminal to see detailed errors
+4. **Test with sample data** - Use provided test files to isolate issues
+5. **Update dependencies** - Ensure all packages are up to date:
+   ```bash
+   pip install --upgrade tensorflow opencv-python matplotlib numpy scipy
+   ```
+
+## Authors
+
+**Falah Sheikh et al.**
+- Primary Author: Falah Sheikh
+- Email: sheikhfalah.sheikhha@ucalgary.ca
+- GitHub: [@falahsheikh](https://github.com/falahsheikh)
+- Institution: University of Calgary
+- Lab: Advanced Database Systems and Applications (ADSA) Lab
+- Funding: Alberta Innovates Summer Research Studentship
+
+## Institutional Affiliation
+
+This project was developed at the **Advanced Database Systems and Applications (ADSA) Lab**, University of Calgary, with funding support from **Alberta Innovates Summer Research Studentship**.
+
+The research focuses on advancing medical imaging analysis through explainable artificial intelligence techniques, contributing to early detection and diagnosis of neurodegenerative diseases.
+
+## License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)** - see the [LICENSE](LICENSE) file for details.
+
+### Permitted Uses
+- Academic research and education
+- Personal use and learning  
+- Modification and creation of derivative works
+- Distribution of original or modified versions
+- Use by non-profit research organizations
+- Government research applications
+- Student projects and coursework
+
+### Requirements
+- Attribution must be provided to the original author and institution
+- License notice must be included in redistributions
+- Changes must be indicated if modifications are made
+- Link to original source should be provided
+
+### Restrictions
+- Commercial use is prohibited
+- Cannot be used for profit-generating activities
+- Cannot be integrated into commercial products without explicit permission
+- Cannot be sold or licensed to third parties
+
+### For Commercial Use
+
+This software is not available for commercial use under the standard license. For commercial licensing inquiries, including:
+- Integration into commercial medical software
+- Use in for-profit healthcare applications  
+- Commercial research and development
+- Consulting services utilizing this software
+
+Please contact: sheikhfalah.sheikhha@ucalgary.ca
+
+## Citation
+
+If you use this software in your research, please cite:
+
+```bibtex
+@software{sheikh2024neuroimaging,
+  title={Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection},
+  author={Sheikh, Falah and others},
+  year={2024},
+  institution={Advanced Database Systems and Applications (ADSA) Lab, University of Calgary},
+  funding={Alberta Innovates Summer Research Studentship},
+  url={https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection},
+  license={CC BY-NC 4.0},
+  doi={}, // Add DOI if available
+  note={Software for neuroimaging analysis with explainable AI}
+}
+```
+
+### Alternative Citation Formats
+
+**APA Style:**
+Sheikh, F., et al. (2024). Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection [Computer software]. Advanced Database Systems and Applications (ADSA) Lab, University of Calgary. https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection
+
+**IEEE Style:**
+F. Sheikh et al., "Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection," Advanced Database Systems and Applications (ADSA) Lab, University of Calgary, 2024. [Online]. Available: https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection
+
+## Contributing
+
+Contributions are welcome from the research community. This project encourages collaboration to advance medical imaging analysis and explainable AI techniques.
+
+### How to Contribute
+
+1. **Fork the repository**
+   ```bash
+   # Click 'Fork' on GitHub or use GitHub CLI
+   gh repo fork falahsheikh/Lightweight_MRI_EAD_Detection
+   ```
+
+2. **Clone your fork**
+   ```bash
+   git clone https://github.com/yourusername/Lightweight_MRI_EAD_Detection.git
+   cd Lightweight_MRI_EAD_Detection
+   ```
+
+3. **Create a feature branch**
+   ```bash
+   git checkout -b feature/research-improvement
+   ```
+
+4. **Make your changes and commit**
+   ```bash
+   git add .
+   git commit -m "Add research improvement: detailed description"
+   ```
+
+5. **Push to your fork**
+   ```bash
+   git push origin feature/research-improvement
+   ```
+
+6. **Submit a pull request**
+   - Go to your fork on GitHub
+   - Click "New Pull Request"
+   - Provide detailed description of changes
+
+### Contribution Guidelines
+
+**Code Quality:**
+- Follow existing code style and conventions
+- Add comments for complex algorithms
+- Include docstrings for new functions
+- Test your changes with provided sample data
+
+**Documentation:**
+- Update README.md for new features
+- Add usage examples for new functionality
+- Update installation instructions if dependencies change
+
+**Research Contributions:**
+- Include references for new algorithms
+- Provide validation data or methods
+- Document performance improvements
+- Explain clinical relevance
+
+### Contribution Areas
+
+We welcome contributions in:
+
+**Algorithm Improvements:**
+- Enhanced XAI visualization techniques
+- Better attention mechanism implementations
+- Improved preprocessing methods
+- New evaluation metrics
+
+**Software Engineering:**
+- Bug fixes and performance optimizations
+- User interface enhancements
+- Cross-platform compatibility improvements
+- Memory and speed optimizations
+
+**Documentation and Testing:**
+- Additional usage examples and tutorials
+- Comprehensive test cases
+- Installation guides for new platforms
+- User experience improvements
+
+**Research Applications:**
+- Support for additional medical imaging modalities
+- New disease classification categories
+- Validation on different datasets
+- Integration with other medical AI tools
+
+### License Agreement
+
+By contributing, you agree that:
+- Your contributions will be licensed under the same CC BY-NC 4.0 license
+- Your contributions cannot be used for commercial purposes
+- You retain copyright to your contributions
+- You grant permission for academic and research use
+
+## Acknowledgments
+
+### Funding and Institutional Support
+- **Alberta Innovates** for Summer Research Studentship funding
+- **Advanced Database Systems and Applications (ADSA) Lab, University of Calgary** for research support, infrastructure, and academic guidance
+- **University of Calgary** for institutional resources and research environment
+
+### Technical Dependencies
+- **TensorFlow** team for the deep learning framework
+- **OpenCV** community for computer vision tools
+- **Matplotlib** developers for visualization capabilities
+- **SimpleITK** team for medical image processing
+- **Scikit-image** contributors for image analysis algorithms
+- **NumPy** and **SciPy** communities for numerical computing foundation
+
+### Research Community
+- Medical imaging research community for datasets, validation methods, and clinical insights
+- Explainable AI researchers for foundational XAI techniques and methodologies
+- Open source software contributors whose tools made this project possible
+
+### Special Recognition
+- Neuroimaging researchers who provided feedback and validation
+- Beta testers from the medical imaging community
+- Contributors to medical imaging standards and protocols
+
+## Contact
+
+### Primary Contact
+**Falah Sheikh et al.**
+- **Email**: sheikhfalah.sheikhha@ucalgary.ca
+- **GitHub**: [@falahsheikh](https://github.com/falahsheikh)
+- **Institution**: Advanced Database Systems and Applications (ADSA) Lab, University of Calgary
+
+### Communication Channels
+
+**For Technical Issues:**
+- Use GitHub Issues for bug reports and feature requests
+- Provide detailed error messages and system information
+- Include steps to reproduce any problems
+
+**For Research Collaboration:**
+- Email: sheikhfalah.sheikhha@ucalgary.ca for academic partnerships
+- Include details about your research interests and institution
+- Specify collaboration goals and expected outcomes
+
+**For Usage Questions:**
+- Check this README and documentation first
+- Search existing GitHub Issues for similar questions
+- Create new issue with "question" label if needed
+- Email: sheikhfalah.sheikhha@ucalgary.ca for complex questions
+
+**For Commercial Licensing:**
+- Email: sheikhfalah.sheikhha@ucalgary.ca with detailed inquiry
+- Include organization information and intended use case
+- Specify commercial application and scale of deployment
+
+### Response Times
+- Technical issues: Typically within 3-5 business days
+- Research collaboration: Within 1-2 weeks
+- General questions: Within 1 week
+- Commercial inquiries: Within 2 weeks
+
+---
+
+**Note**: This software is provided for research and educational purposes. Clinical applications require appropriate validation, regulatory approval, and adherence to medical device standards. Users are responsible for ensuring compliance with applicable regulations and ethical guidelines in their jurisdiction.

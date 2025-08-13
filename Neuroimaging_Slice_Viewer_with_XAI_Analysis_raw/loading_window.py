@@ -1,3 +1,10 @@
+"""
+Loading Window Component
+Copyright (c) 2024 Falah Sheikh, ADSA Lab, University of Calgary
+Licensed under CC BY-NC 4.0 - see LICENSE file for details.
+
+Author: Falah Sheikh (https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection)
+"""
 import tkinter as tk
 from tkinter import ttk
 import time

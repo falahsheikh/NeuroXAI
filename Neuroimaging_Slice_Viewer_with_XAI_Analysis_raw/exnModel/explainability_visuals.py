@@ -1,4 +1,17 @@
 # explainability_visuals.py
+"""
+XAI Analysis Tool for Early Alzheimer's Disease Detection
+Copyright (c) 2024 Falah Sheikh, ADSA Lab, University of Calgary
+Licensed under CC BY-NC 4.0 - see LICENSE file for details.
+
+This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 
+International License. Commercial use is prohibited without explicit permission.
+
+Developed at the Advanced Database Systems and Applications (ADSA) Lab,
+University of Calgary, with funding from Alberta Innovates Summer Research Studentship.
+
+Author: Falah Sheikh (https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection)
+"""
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Frame, Toplevel
 from PIL import Image, ImageTk
