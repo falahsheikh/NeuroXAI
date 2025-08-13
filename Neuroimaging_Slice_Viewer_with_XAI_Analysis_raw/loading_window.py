@@ -7,50 +7,74 @@ class LoadingWindow:
     def __init__(self, title="Loading...", message="Please wait while the application loads..."):
         self.root = tk.Tk()
         self.root.title(title)
-        self.root.geometry("400x200")
+        self.root.geometry("400x240")
         self.root.resizable(False, False)
         
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() // 2) - (400 // 2)
-        y = (self.root.winfo_screenheight() // 2) - (200 // 2)
-        self.root.geometry(f"400x200+{x}+{y}")
+        y = (self.root.winfo_screenheight() // 2) - (240 // 2)
+        self.root.geometry(f"400x240+{x}+{y}")
         
-        style = ttk.Style()
-        style.theme_use('clam')
-        
-        bg_color = '#fdf6e3'  # Light background
-        accent_color = '#000080'  # Blue accent
+        bg_color = '#fdf6e3'  
+        accent_color = '#000080'  
+        block_color = '#000080'  
+        empty_color = '#e8dcc0'  
         
         self.root.configure(bg=bg_color)
 
-        main_frame = ttk.Frame(self.root, padding=20)
+        main_frame = tk.Frame(self.root, bg=bg_color, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        title_label = ttk.Label(main_frame, text=title, 
-                               font=('Segoe UI', 14, 'bold'),
-                               foreground=accent_color)
+        
+        title_label = tk.Label(main_frame, text=title, 
+                              font=('Segoe UI', 14, 'bold'),
+                              fg=accent_color, bg=bg_color)
         title_label.pack(pady=(0, 20))
         
-        message_label = ttk.Label(main_frame, text=message,
-                                 font=('Segoe UI', 10),
-                                 wraplength=350)
+        message_label = tk.Label(main_frame, text=message,
+                                font=('Segoe UI', 10),
+                                wraplength=350, bg=bg_color)
         message_label.pack(pady=(0, 20))
-        self.progress = ttk.Progressbar(main_frame, mode='determinate', length=300, maximum=100)
-        self.progress.pack(pady=(0, 20))
         
-        self.status_label = ttk.Label(main_frame, text="Initializing...",
-                                     font=('Segoe UI', 9),
-                                     foreground='#586e75')
+        self.progress_frame = tk.Frame(main_frame, bg=bg_color)
+        self.progress_frame.pack(pady=(0, 20))
+        
+        self.blocks = []
+        self.total_blocks = 20
+        block_width = 12
+        block_height = 20
+        block_spacing = 2
+        
+        for i in range(self.total_blocks):
+            block = tk.Frame(self.progress_frame, 
+                           width=block_width, 
+                           height=block_height,
+                           bg=empty_color,
+                           relief='solid',
+                           bd=1)
+            block.pack(side=tk.LEFT, padx=(block_spacing if i > 0 else 0, 0))
+            block.pack_propagate(False)  
+            self.blocks.append(block)
+        
+        self.status_label = tk.Label(main_frame, text="Initializing...",
+                                   font=('Segoe UI', 9),
+                                   fg='#586e75', bg=bg_color)
         self.status_label.pack()
-        self.progress['value'] = 0
-        self.completion_callback = None      
+
+        footer_label = tk.Label(main_frame, text="Developed by Falah Sheikh",
+                               font=('Segoe UI', 10, 'italic'),
+                               fg='#93a1a1', bg=bg_color)
+        footer_label.pack(pady=(20, 0))
+
+        self.current_block = 0
+        self.completion_callback = None
+        self.block_color = block_color
+        self.empty_color = empty_color
 
         self.root.protocol("WM_DELETE_WINDOW", lambda: None)
         
     def animate_progress(self, duration=2.5, completion_callback=None):
-        
         self.completion_callback = completion_callback
-        steps = 100
-        step_delay = int((duration * 1000) / steps)  # milliseconds per step
+        step_delay = int((duration * 1000) / self.total_blocks)  # milliseconds per block
         
         status_messages = [
             "Initializing components...",
@@ -60,27 +84,28 @@ class LoadingWindow:
             "Complete!"
         ]
         
-        def update_progress(step):
-            if step <= 100:
-                self.progress['value'] = step
+        def update_progress(block_index):
+            if block_index < self.total_blocks:
+                self.blocks[block_index].config(bg=self.block_color)
                 
-                if step < 25:
+                progress_percent = (block_index + 1) / self.total_blocks * 100
+                
+                if progress_percent < 25:
                     self.status_label.config(text=status_messages[0])
-                elif step < 50:
+                elif progress_percent < 50:
                     self.status_label.config(text=status_messages[1])
-                elif step < 75:
+                elif progress_percent < 75:
                     self.status_label.config(text=status_messages[2])
-                elif step < 95:
+                elif progress_percent < 95:
                     self.status_label.config(text=status_messages[3])
                 else:
                     self.status_label.config(text=status_messages[4])
                 
                 self.root.update()
                 
-                if step < 100:
-                    self.root.after(step_delay, lambda: update_progress(step + 1))
+                if block_index < self.total_blocks - 1:
+                    self.root.after(step_delay, lambda: update_progress(block_index + 1))
                 else:
-
                     self.root.after(300, self._complete_loading)
 
         update_progress(0)
