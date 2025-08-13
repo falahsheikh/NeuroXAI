@@ -754,6 +754,7 @@ Lightweight_MRI_EAD_Detection/
 │   └── exnModel/
 │       ├── explainability_visuals.py       # XAI analysis tool
 │       └── TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras  # Pre-trained model
+│   └── visuals_of_application/             # Screenshots of Neuroimaging Slicer Viewer and Analysis Tool
 ├── test_inputs_for_tools/                  # Sample data and test files
 │   ├── Analysis_Tool/                      # Test images for XAI analysis
 │   │   ├── CN/                            # Cognitively Normal samples
