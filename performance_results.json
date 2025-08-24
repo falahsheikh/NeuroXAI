@@ -1,0 +1,64 @@
+{
+  "system_info": {
+    "cpu_count": 8,
+    "cpu_freq": {
+      "current": 3504,
+      "min": 600,
+      "max": 3504
+    },
+    "memory_total_gb": 8.0,
+    "platform": "darwin",
+    "python_version": "3.11.3 (v3.11.3:f3909b8bc8, Apr  4 2023, 20:12:10) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "tensorflow_version": "2.19.0"
+  },
+  "measurements": [
+    {
+      "operation": "model_loading",
+      "model_path": "/Users/falahsheikh/Desktop/workSpace/python/Lightweight_MRI_EAD_Detection/Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw/exnModel/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras",
+      "load_time_seconds": 2.5684,
+      "memory_usage_mb": 69.09,
+      "peak_memory_mb": 33.32,
+      "model_size_mb": 25.37,
+      "model_parameters": 6083667
+    },
+    {
+      "operation": "inference",
+      "num_runs": 10,
+      "mean_inference_time_ms": 48.79,
+      "std_inference_time_ms": 6.58,
+      "min_inference_time_ms": 45.52,
+      "max_inference_time_ms": 68.24,
+      "mean_memory_delta_mb": -3.42,
+      "predictions_shape": [
+        1,
+        3
+      ],
+      "sample_prediction": [
+        0.9478089809417725,
+        3.573067078832537e-05,
+        0.05215537175536156
+      ]
+    },
+    {
+      "operation": "xai_visualization",
+      "target_layer": "top_conv",
+      "generation_time_ms": 1846.73,
+      "memory_usage_mb": 37.0,
+      "heatmap_shape": [
+        224,
+        224
+      ],
+      "heatmap_stats": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.0873694196343422
+      }
+    },
+    {
+      "operation": "complete_workflow",
+      "total_time_ms": 4463.92,
+      "inference_plus_xai_ms": 1895.52
+    }
+  ],
+  "timestamp": "2025-08-17T16:20:03.197076"
+}

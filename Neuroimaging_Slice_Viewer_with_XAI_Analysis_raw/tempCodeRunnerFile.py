@@ -219,6 +219,7 @@ class SlicerApp:
         self.measurement_id_counter = 0
         self.temp_measure_point = None
         
+        # NEW AREA MEASUREMENT VARIABLES
         self.area_mode = tk.BooleanVar(value=False)
         self.area_mode.trace_add('write', self._on_area_toggle)
         self.temp_area_points = None
@@ -554,6 +555,7 @@ class SlicerApp:
                         self.last_drawn_stroke = stroke
 
     def _serialize_measurements(self):
+        """Modified to handle both distance and area measurements"""
         serialized = []
         for measure in self.measurements:
             measure_data = {
@@ -583,6 +585,7 @@ class SlicerApp:
         return serialized
 
     def _deserialize_measurements(self, serialized_measurements):
+        """Fixed to handle both distance and area measurements without ID conflicts"""
         self.measurements.clear()
         self.measurement_id_counter = 0
         self.area_id_counter = 0
@@ -621,15 +624,19 @@ class SlicerApp:
             
             self.measurements.append(measure)
         
+        # Set counters to avoid ID conflicts
         self.measurement_id_counter = max_id
         self.area_id_counter = max_id
 
     def _populate_annotation_trees(self):
+        """Fixed to prevent duplicate tree items"""
+        # Clear existing items
         for item in self.drawings_tree.get_children():
             self.drawings_tree.delete(item)
         for item in self.measurements_tree.get_children():
             self.measurements_tree.delete(item)
 
+        # Add drawings with comments
         for plane, slices in self.drawings.items():
             for slice_idx, strokes in slices.items():
                 for stroke in strokes:
@@ -638,6 +645,7 @@ class SlicerApp:
                         if not self.drawings_tree.exists(item_id):
                             self._add_item_to_tree(self.drawings_tree, stroke, "Drawing")
         
+        # Add measurements with comments
         for measure in self.measurements:
             if 'comment' in measure:
                 item_id = f"Measure_{measure['id']}"
@@ -734,13 +742,16 @@ class SlicerApp:
         self.root.bind('<Escape>', self._cancel_area_measurement)  # NEW ESCAPE BINDING
 
     def _on_area_toggle(self, *args):
+        """Handle area measurement mode toggle"""
         if self.area_mode.get():
+            # Disable other interaction modes when area mode is active
             self.measurement_mode.set(False)
             self.draw_mode.set(False)
             self.zoom_select_mode.set(False)
             self.pan_mode.set(False)
             self.status_label.config(text="Area Mode: Click and drag to draw a lasso around an area.")
             
+            # Set lasso cursor for 2D views
             for name, canvas in self.canvases.items():
                 if name != '3d' and canvas: 
                     canvas.get_tk_widget().config(cursor="crosshair")
@@ -774,7 +785,7 @@ class SlicerApp:
         ttk.Separator(toolbar_frame, orient='vertical').pack(side=tk.LEFT, fill='y', padx=5, pady=2)
         ttk.Checkbutton(toolbar_frame, text="Crosshairs", variable=self.crosshair_enabled, command=self.update_2d_views).pack(side=tk.LEFT, padx=2)
         ttk.Checkbutton(toolbar_frame, text="Measure", variable=self.measurement_mode).pack(side=tk.LEFT, padx=2)
-        ttk.Checkbutton(toolbar_frame, text="Area", variable=self.area_mode).pack(side=tk.LEFT, padx=2) 
+        ttk.Checkbutton(toolbar_frame, text="Area", variable=self.area_mode).pack(side=tk.LEFT, padx=2)  # NEW AREA BUTTON
         ttk.Checkbutton(toolbar_frame, text="Draw", variable=self.draw_mode).pack(side=tk.LEFT, padx=2)
         ttk.Checkbutton(toolbar_frame, text="Zoom Select", variable=self.zoom_select_mode).pack(side=tk.LEFT, padx=2)
         ttk.Checkbutton(toolbar_frame, text="Pan", variable=self.pan_mode).pack(side=tk.LEFT, padx=2)
@@ -786,12 +797,14 @@ class SlicerApp:
 
     def _on_pan_toggle(self, *args):
         if self.pan_mode.get():
+            # Disable other interaction modes when pan is active
             self.measurement_mode.set(False)
             self.draw_mode.set(False)
             self.zoom_select_mode.set(False)
-            self.area_mode.set(False)  
+            self.area_mode.set(False)  # ADD AREA MODE
             self.status_label.config(text="Pan Mode: Click and drag to pan the view.")
             
+            # Set pan cursor for 2D views
             for name, canvas in self.canvases.items():
                 if name != '3d' and canvas: 
                     canvas.get_tk_widget().config(cursor="fleur")
@@ -806,7 +819,7 @@ class SlicerApp:
             self.measurement_mode.set(False)
             self.draw_mode.set(False)
             self.pan_mode.set(False)
-            self.area_mode.set(False) 
+            self.area_mode.set(False)  # ADD AREA MODE
             self.status_label.config(text="Zoom Select Mode: Click and drag on a 2D view to zoom to selection.")
             for name, canvas in self.canvases.items():
                 if name != '3d' and canvas: 
@@ -864,6 +877,7 @@ class SlicerApp:
         )
         edit_button.pack(side=tk.RIGHT)
 
+        # Create notebook for tabs
         notebook = ttk.Notebook(control_frame)
         notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -1115,9 +1129,11 @@ class SlicerApp:
     def _create_viewer_panel(self):
         vis_container = ttk.Frame(self.main_pane, style='TFrame')
         
+        # Create notebook for different views
         self.view_notebook = ttk.Notebook(vis_container)
         self.view_notebook.pack(fill=tk.BOTH, expand=True)
 
+        # Create main view tab
         main_view_tab = ttk.Frame(self.view_notebook)
         self.view_notebook.add(main_view_tab, text="Image Viewer")
         
@@ -1208,6 +1224,7 @@ class SlicerApp:
             
         h, w = slice_data.shape
         
+        # Display the image
         ax.imshow(slice_data, cmap=self.colormap.get(), vmin=self.vmin, vmax=self.vmax, 
                 origin='lower', extent=(0, w, 0, h), interpolation='bilinear')
         
@@ -1243,6 +1260,7 @@ class SlicerApp:
         is_maximized = (self.maximized_view == view_name)
         
         if is_maximized and self.show_axis_scales.get():
+            # Add 15% padding on each side for axis labels
             padding_x = (xlim_max - xlim_min) * 0.05
             padding_y = (ylim_max - ylim_min) * 0.08
             ax.figure.subplots_adjust(left=0.06, right=0.99, bottom=0.08, top=0.97)
@@ -1261,6 +1279,7 @@ class SlicerApp:
             for spine in ax.spines.values(): 
                 spine.set_visible(False)
 
+        # Draw crosshairs if enabled
         if self.crosshair_enabled.get():
             pos_map = {
                 AXIAL: (self.current_slices[SAGITTAL], self.current_slices[CORONAL]), 
@@ -1275,11 +1294,13 @@ class SlicerApp:
             x_pos, y_pos = pos_map[plane_idx]
             x_color, y_color = colors_map[plane_idx]
             
+            # Only draw crosshairs if they're within view
             if xlim_min <= x_pos <= xlim_max:
                 ax.axvline(x_pos, color=x_color, lw=0.7, alpha=0.9, linestyle='-')
             if ylim_min <= y_pos <= ylim_max:
                 ax.axhline(y_pos, color=y_color, lw=0.7, alpha=0.9, linestyle='-')
 
+        # Draw annotations
         self._draw_slice_measurements(ax, plane_idx, self.current_slices[plane_idx])
         self._draw_slice_drawings(ax, plane_idx, self.current_slices[plane_idx])
 
@@ -1297,6 +1318,7 @@ class SlicerApp:
             ax.text(0.98, 0.98, pat_text, color='gray', fontsize=6, ha='right', va='top', 
                     transform=ax.transAxes, bbox=dict(facecolor='black', alpha=0.6, edgecolor='none', pad=2))
 
+        # Zoom selection rectangle
         if self.zoom_selection['rect_patch'] and self.zoom_selection['view'] == view_name:
             ax.add_patch(self.zoom_selection['rect_patch'])
         
@@ -1314,6 +1336,7 @@ class SlicerApp:
         }
         sp_x, sp_y = spacing_map.get(plane_idx, (1.0, 1.0))
         
+        # Calculate view size in pixels and real-world units
         view_width_pixels = xlim_max - xlim_min
         view_height_pixels = ylim_max - ylim_min
         view_width_mm = view_width_pixels * sp_x
@@ -1321,7 +1344,7 @@ class SlicerApp:
         
         zoom = self.zoom_factors[view_name]
         if zoom > 10:
-            target_ticks = 12  
+            target_ticks = 12  # More ticks when highly zoomed
         elif zoom > 5:
             target_ticks = 10
         elif zoom > 2:
@@ -1424,20 +1447,27 @@ class SlicerApp:
 
     def _round_to_nice_measurement(self, value_mm):
         if value_mm <= 0:
-            return 0.001 
+            return 0.001  # 1 micrometer minimum
         
         nice_values = [
+            # Micrometers (to mm)
             0.001, 0.002, 0.005, 0.01, 0.02, 0.05,
+            # Sub-millimeter
             0.1, 0.2, 0.25, 0.5,
+            # Millimeters
             1, 2, 2.5, 5, 10, 20, 25, 50,
+            # Centimeters
             100, 200, 250, 500,
+            # Larger measurements
             1000, 2000, 5000, 10000
         ]
         
+        # Find the closest nice value that's >= target
         for nice in nice_values:
             if nice >= value_mm:
                 return nice
         
+        # If value is very large, use scientific notation base
         magnitude = 10 ** int(np.log10(value_mm))
         normalized = value_mm / magnitude
         
@@ -1449,6 +1479,7 @@ class SlicerApp:
             return 10 * magnitude
 
     def _draw_slice_measurements(self, ax, plane_idx, slice_idx):
+        """Modified to draw both distance and area measurements"""
         for measure in self.measurements:
             if measure['plane'] != plane_idx or measure['slice'] != slice_idx:
                 continue
@@ -1458,15 +1489,19 @@ class SlicerApp:
                             self.highlighted_item.get('id') == measure.get('id'))
             
             if measure.get('type') == 'area':
+                # Draw area measurement
                 points = np.array(measure['points'])
                 
+                # Draw the polygon outline
                 linewidth = 2.5 if is_highlighted else 1.2
                 ax.plot(points[:, 0], points[:, 1], 
                     color=color, linewidth=linewidth, alpha=0.9)
                 
+                # Fill the polygon with transparency
                 fill_alpha = 0.3 if is_highlighted else 0.15
                 ax.fill(points[:, 0], points[:, 1], color=color, alpha=fill_alpha)
                 
+                # Draw area text at centroid
                 centroid_x = np.mean(points[:, 0])
                 centroid_y = np.mean(points[:, 1])
                 area_text = f"{measure['area_mm2']:.1f}mm²"
@@ -1485,6 +1520,7 @@ class SlicerApp:
                             edgecolor=color,
                             linewidth=0.5))
             else:
+                # Draw distance measurement (existing code)
                 p1, p2 = measure['p1'], measure['p2']
                 
                 linewidth = 2.5 if is_highlighted else 1.2
@@ -1513,6 +1549,7 @@ class SlicerApp:
                             edgecolor=color,
                             linewidth=0.5))
         
+        # Draw temporary area lasso
         if (self.temp_area_points and 
             self.temp_area_points['plane'] == plane_idx and 
             self.temp_area_points['slice'] == slice_idx):
@@ -1522,6 +1559,7 @@ class SlicerApp:
                 ax.plot(points[:, 0], points[:, 1], 
                     color='yellow', linewidth=2, alpha=0.8, linestyle='--')
                 
+                # Show start point
                 ax.plot(points[0, 0], points[0, 1], 'o', 
                     color='yellow', markersize=6, alpha=0.9)
                 
@@ -1533,6 +1571,7 @@ class SlicerApp:
                             alpha=0.6, 
                             edgecolor='none'))
         
+        # Draw temporary distance measurement point
         if (self.temp_measure_point and 
             self.temp_measure_point['plane'] == plane_idx and 
             self.temp_measure_point['slice'] == slice_idx):
@@ -1800,7 +1839,7 @@ class SlicerApp:
         
         self.measurements.clear()
         self.last_measurement = None
-        self.last_area = None  
+        self.last_area = None  # Clear area reference too
         
         for item in self.measurements_tree.get_children():
             self.measurements_tree.delete(item)
@@ -1809,6 +1848,7 @@ class SlicerApp:
         self.status_label.config(text="All measurements cleared")
 
     def add_drawing_comment(self):
+        """Fixed to prevent duplicate tree items"""       
         if not self.last_drawn_stroke: 
             messagebox.showwarning("Warning", "Please make a drawing first.", parent=self.root)
             return
@@ -1821,10 +1861,12 @@ class SlicerApp:
             stroke = self.last_drawn_stroke
             stroke['comment'] = comment
             
+            # Check if item already exists in tree before adding
             item_id = f"Drawing_{stroke['id']}"
             if not self.drawings_tree.exists(item_id):
                 self._add_item_to_tree(self.drawings_tree, stroke, "Drawing")
             else:
+                # Update existing item
                 self._update_annotation_in_tree(self.drawings_tree, item_id, stroke)
             
             self._add_to_history({
@@ -1841,8 +1883,10 @@ class SlicerApp:
             messagebox.showwarning("Warning", "Please make a measurement first.", parent=self.root)
             return
         
+        # Determine which measurement to comment on (prioritize most recent)
         target_measurement = None
         if self.last_area and self.last_measurement:
+            # Choose the one with higher ID (more recent)
             if self.last_area['id'] > self.last_measurement['id']:
                 target_measurement = self.last_area
             else:
@@ -1863,10 +1907,12 @@ class SlicerApp:
         if comment:
             target_measurement['comment'] = comment
             
+            # Check if item already exists in tree before adding
             item_id = f"Measure_{target_measurement['id']}"
             if not self.measurements_tree.exists(item_id):
                 self._add_item_to_tree(self.measurements_tree, target_measurement, "Measure")
             else:
+                # Update existing item
                 self._update_annotation_in_tree(self.measurements_tree, item_id, target_measurement)
             
             self._add_to_history({
@@ -1878,6 +1924,7 @@ class SlicerApp:
             })
     
     def _add_item_to_tree(self, tree, item_data, item_type):
+        """Fixed to handle both distance and area measurements and prevent duplicates"""
         plane_name = {AXIAL: "Axial", CORONAL: "Coronal", SAGITTAL: "Sagittal"}[item_data['plane']]
         comment = item_data.get('comment', '')
         
@@ -1887,15 +1934,17 @@ class SlicerApp:
         else:
             if item_type == "Drawing":
                 text = f"({plane_name} {item_data['slice']}) {comment}"
-            else: 
+            else:  # Distance measurement
                 measurement_info = f"Distance: {item_data['dist_mm']:.2f}mm"
                 text = f"({plane_name} {item_data['slice']}) {measurement_info} - {comment}"
         
         item_id = f"{item_type}_{item_data['id']}"
         
+        # Check if item already exists before inserting
         if not tree.exists(item_id):
             tree.insert('', tk.END, text=text, values=(text,), iid=item_id)
         else:
+            # Update existing item
             tree.item(item_id, text=text, values=(text,))
 
     def on_drawing_select(self, event): self._on_annotation_select_handler(self.drawings_tree, 'Drawing')
@@ -1917,7 +1966,7 @@ class SlicerApp:
         found_item = None
         if item_type == 'Drawing':
             found_item = next((s for p, slices in collection.items() for i, strokes in slices.items() for s in strokes if s.get('id') == item_id), None)
-        else: 
+        else: # Measurement
             found_item = next((m for m in collection if m.get('id') == item_id), None)
             
         if found_item:
@@ -2066,6 +2115,7 @@ class SlicerApp:
             'coronal': self.panes['right_v']
         }
         
+        # Restore all views
         for v_name in ['axial', 'sagittal', 'coronal']:
             widget = self.canvases[v_name].get_tk_widget().master
             parent_pane = view_config[v_name]
@@ -2110,6 +2160,7 @@ class SlicerApp:
     def _get_plane_idx(self, view_name): return {'axial': AXIAL, 'coronal': CORONAL, 'sagittal': SAGITTAL}.get(view_name)
 
     def _handle_measurement_click(self, event, view):
+        """Fixed distance measurement to use proper ID management"""
         plane_idx = self._get_plane_idx(view)
         if plane_idx is None:
             return
@@ -2118,6 +2169,7 @@ class SlicerApp:
         x, y = event.xdata, event.ydata
         
         if self.temp_measure_point is None:
+            # Start new measurement
             self.temp_measure_point = {
                 'p1': (x, y),
                 'plane': plane_idx,
@@ -2125,12 +2177,14 @@ class SlicerApp:
             }
             self.status_label.config(text="Measure Mode: Click to set end point (ESC to cancel)")
         else:
+            # Complete measurement
             if (self.temp_measure_point['plane'] == plane_idx and 
                 self.temp_measure_point['slice'] == slice_idx):
                 
                 p1 = self.temp_measure_point['p1']
                 p2 = (x, y)
                 
+                # Calculate distance
                 spacing_map = {
                     AXIAL: (self.spacing[0], self.spacing[1]),  # X, Y spacing
                     CORONAL: (self.spacing[0], self.spacing[2]),  # X, Z spacing
@@ -2142,12 +2196,13 @@ class SlicerApp:
                 dy = (p2[1] - p1[1]) * sp_y
                 dist_mm = np.sqrt(dx**2 + dy**2)
                 
+                # Use unified ID counter
                 self._increment_measurement_counters()
                 measurement_id = max(self.measurement_id_counter, self.area_id_counter)
                 
                 new_measurement = {
                     'id': measurement_id,
-                    'type': 'distance', 
+                    'type': 'distance',  # Explicitly mark as distance
                     'p1': p1,
                     'p2': p2,
                     'plane': plane_idx,
@@ -2163,6 +2218,7 @@ class SlicerApp:
                 self.temp_measure_point = None
                 self.status_label.config(text=f"Measurement created: {dist_mm:.2f} mm")
             else:
+                # Different plane/slice, start new measurement
                 self.temp_measure_point = {
                     'p1': (x, y),
                     'plane': plane_idx,
@@ -2173,6 +2229,7 @@ class SlicerApp:
         self.update_2d_views()
 
     def _cancel_measurement(self, event=None):
+        """Fixed cancel measurement method"""       
         if self.temp_measure_point:
             self.temp_measure_point = None
             self.status_label.config(text="Distance measurement cancelled")
@@ -2188,8 +2245,9 @@ class SlicerApp:
             return
         slice_idx = self.current_slices[plane_idx]
 
+        # NEW AREA MEASUREMENT HANDLING
         if self.area_mode.get() and event.button == 1:
-            self.mouse_state = STATE_DRAW  
+            self.mouse_state = STATE_DRAW  # Reuse draw state for area lasso
             self.temp_area_points = {
                 'points': [(event.xdata, event.ydata)],
                 'plane': plane_idx,
@@ -2254,6 +2312,7 @@ class SlicerApp:
             self.mouse_state = STATE_WL
 
     def on_button_release(self, event, view):
+        # NEW AREA MEASUREMENT HANDLING
         if self.mouse_state == STATE_DRAW and self.area_mode.get():
             self._finalize_area_measurement(event, view)
             return
@@ -2282,6 +2341,7 @@ class SlicerApp:
             
         plane_idx = self._get_plane_idx(view)
         
+        # NEW AREA MEASUREMENT HANDLING
         if (self.mouse_state == STATE_DRAW and self.area_mode.get() and 
             self.temp_area_points and plane_idx is not None):
             
@@ -2291,8 +2351,9 @@ class SlicerApp:
                 last_point = self.temp_area_points['points'][-1]
                 new_point = (event.xdata, event.ydata)
                 
+                # Add point if it's far enough from the last one
                 distance = np.sqrt((new_point[0] - last_point[0])**2 + (new_point[1] - last_point[1])**2)
-                if distance > 2.0:  
+                if distance > 2.0:  # Minimum distance threshold for smoother lasso
                     self.temp_area_points['points'].append(new_point)
                     self.update_2d_views()
             return
@@ -2308,7 +2369,7 @@ class SlicerApp:
                 new_point = (event.xdata, event.ydata)
                 
                 distance = np.sqrt((new_point[0] - last_point[0])**2 + (new_point[1] - last_point[1])**2)
-                if distance > 1.0:  
+                if distance > 1.0:  # Minimum distance threshold
                     current_stroke['points'].append(new_point)
                     self.update_2d_views()
                     
@@ -2330,7 +2391,7 @@ class SlicerApp:
                     
                     center_x_ratio, center_y_ratio = self.zoom_centers[view]
                     
-                    dx_ratio = -dx_data / w  
+                    dx_ratio = -dx_data / w  # Negative for natural panning
                     dy_ratio = -dy_data / h
                     
                     new_center_x = np.clip(center_x_ratio + dx_ratio, 0, 1)
@@ -2354,6 +2415,7 @@ class SlicerApp:
         self.last_mouse_pos.update({'x': event.x, 'y': event.y})
 
     def _finalize_area_measurement(self, event, view):
+        """Fixed finalize area measurement to handle ID conflicts"""
         if not self.temp_area_points or len(self.temp_area_points['points']) < 3:
             self.temp_area_points = None
             self.status_label.config(text="Area measurement cancelled - need at least 3 points.")
@@ -2364,24 +2426,28 @@ class SlicerApp:
         slice_idx = self.temp_area_points['slice']
         points = self.temp_area_points['points']
         
+        # Close the polygon by connecting last point to first
         if len(points) > 2:
             first_point = points[0]
             last_point = points[-1]
             distance_to_start = np.sqrt((last_point[0] - first_point[0])**2 + 
                                     (last_point[1] - first_point[1])**2)
             
+            # Auto-close if we're reasonably close to the start
             if distance_to_start > 10:
                 points.append(first_point)
         
+        # Calculate area using the shoelace formula
         area_pixels = self._calculate_polygon_area(points)
         area_mm2 = self._convert_area_to_mm2(area_pixels, plane_idx)
         
+        # Use a unified ID counter that ensures uniqueness across all measurements
         self._increment_measurement_counters()
         measurement_id = max(self.measurement_id_counter, self.area_id_counter)
         
         new_area = {
             'id': measurement_id,
-            'type': 'area',  
+            'type': 'area',  # Distinguish from distance measurements
             'points': points,
             'plane': plane_idx,
             'slice': slice_idx,
@@ -2390,7 +2456,7 @@ class SlicerApp:
             'area_mm2': area_mm2
         }
         
-        self.measurements.append(new_area)  
+        self.measurements.append(new_area)  # Add to same list as distance measurements
         self.last_area = new_area
         self.area_id_counter = measurement_id
         self._add_to_history({'type': 'area', 'data': new_area.copy()})
@@ -2400,6 +2466,7 @@ class SlicerApp:
         self.update_2d_views()
 
     def _increment_measurement_counters(self):
+        """Ensure measurement IDs are unique across distance and area measurements"""
         max_existing_id = 0
         for measure in self.measurements:
             if measure.get('id', 0) > max_existing_id:
@@ -2409,9 +2476,11 @@ class SlicerApp:
         self.area_id_counter = max(self.area_id_counter, max_existing_id) + 1
 
     def _calculate_polygon_area(self, points):
+        """Calculate area of polygon using shoelace formula"""
         if len(points) < 3:
             return 0.0
         
+        # Ensure polygon is closed
         if points[0] != points[-1]:
             points = points + [points[0]]
         
@@ -2422,6 +2491,7 @@ class SlicerApp:
         return abs(area) / 2.0
 
     def _convert_area_to_mm2(self, area_pixels, plane_idx):
+        """Convert pixel area to mm² based on spacing and plane"""
         spacing_map = {
             AXIAL: (self.spacing[0], self.spacing[1]),    # X, Y spacing
             CORONAL: (self.spacing[0], self.spacing[2]),  # X, Z spacing  
@@ -2431,6 +2501,7 @@ class SlicerApp:
         return area_pixels * sp_x * sp_y
     
     def _cancel_area_measurement(self, event=None):
+        """Fixed cancel area measurement when Escape is pressed"""
         if self.temp_area_points:
             self.temp_area_points = None
             self.status_label.config(text="Area measurement cancelled")
@@ -2474,7 +2545,7 @@ class SlicerApp:
             self.draw_mode.set(False)
             self.zoom_select_mode.set(False)
             self.pan_mode.set(False)
-            self.area_mode.set(False)  
+            self.area_mode.set(False)  # ADD AREA MODE
             self.status_label.config(text="Measure Mode: Click to set start point, click again to set end point.")
             for name, canvas in self.canvases.items():
                 if name != '3d' and canvas: 
@@ -2492,7 +2563,7 @@ class SlicerApp:
             self.measurement_mode.set(False)
             self.zoom_select_mode.set(False)
             self.pan_mode.set(False)
-            self.area_mode.set(False)  
+            self.area_mode.set(False)  # ADD AREA MODE
             self.status_label.config(text="Draw Mode: Click and drag to draw.")
             for name, canvas in self.canvases.items():
                 if name != '3d' and canvas: 
@@ -2657,6 +2728,7 @@ class SlicerApp:
             self.root.destroy()
 
     def launch_explainability(self):
+        # Launch the Analysis Tool as separate process
         try:
             import subprocess
             import sys
@@ -2677,6 +2749,7 @@ class SlicerApp:
         self._update_history_buttons()
 
     def undo_action(self):
+        """Modified undo to handle area measurements"""
         if not self.history_stack:
             self.status_label.config(text="Nothing to undo")
             return
@@ -2701,10 +2774,11 @@ class SlicerApp:
                 try:
                     self.drawings_tree.delete(f"Drawing_{stroke['id']}")
                 except tk.TclError:
-                    pass 
+                    pass  # Item wasn't in tree (no comment)
                 self.status_label.config(text=f"Undo: Removed drawing {stroke['id']}")
                     
         elif last_action['type'] == 'measure':
+            # Undo distance measurement
             measure = last_action['data']
             self.measurements = [m for m in self.measurements if m['id'] != measure['id']]
 
@@ -2714,10 +2788,11 @@ class SlicerApp:
             try:
                 self.measurements_tree.delete(f"Measure_{measure['id']}")
             except tk.TclError:
-                pass  
+                pass  # Item wasn't in tree (no comment)
             self.status_label.config(text=f"Undo: Removed measurement {measure['id']}")
         
         elif last_action['type'] == 'area':
+            # Undo area measurement
             area = last_action['data']
             self.measurements = [m for m in self.measurements if m['id'] != area['id']]
             
@@ -2727,10 +2802,11 @@ class SlicerApp:
             try:
                 self.measurements_tree.delete(f"Measure_{area['id']}")
             except tk.TclError:
-                pass  
+                pass  # Item wasn't in tree (no comment)
             self.status_label.config(text=f"Undo: Removed area measurement {area['id']}")
         
         elif last_action['type'] == 'delete_draw':
+            # Undo drawing deletion
             stroke = last_action['data']
             plane, slice_idx = last_action['plane'], last_action['slice']
             
@@ -2746,6 +2822,7 @@ class SlicerApp:
             self.status_label.config(text=f"Undo: Restored drawing {stroke['id']}")
                 
         elif last_action['type'] == 'delete_measure':
+            # Undo measurement deletion
             measure = last_action['data']
             self.measurements.append(measure)
 
@@ -2754,6 +2831,7 @@ class SlicerApp:
             self.status_label.config(text=f"Undo: Restored measurement {measure['id']}")
         
         elif last_action['type'] == 'edit_draw_comment':
+            # Undo drawing comment edit
             data = last_action['data']
             for plane, slices in self.drawings.items():
                 for slice_idx, strokes in slices.items():
@@ -2778,6 +2856,7 @@ class SlicerApp:
                             break
         
         elif last_action['type'] == 'edit_measure_comment':
+            # Undo measurement comment edit
             data = last_action['data']
             for measure in self.measurements:
                 if measure.get('id') == data['id']:
@@ -2800,6 +2879,7 @@ class SlicerApp:
                     break
         
         elif last_action['type'] == 'add_draw_comment':
+            # Undo adding drawing comment
             data = last_action['data']
             for plane, slices in self.drawings.items():
                 for slice_idx, strokes in slices.items():
@@ -2815,6 +2895,7 @@ class SlicerApp:
                             break
         
         elif last_action['type'] == 'add_measure_comment':
+            # Undo adding measurement comment
             data = last_action['data']
             for measure in self.measurements:
                 if measure.get('id') == data['id']:
@@ -2828,9 +2909,11 @@ class SlicerApp:
                     break
         
         elif last_action['type'] == 'clear_drawings':
+            # Undo clearing all drawings
             drawings_backup = last_action['data']
             self.drawings = drawings_backup
             
+            # Restore drawings to tree
             for plane, slices in self.drawings.items():
                 for slice_idx, strokes in slices.items():
                     for stroke in strokes:
@@ -2839,9 +2922,11 @@ class SlicerApp:
             self.status_label.config(text="Undo: Restored all drawings")
         
         elif last_action['type'] == 'clear_measurements':
+            # Undo clearing all measurements
             measurements_backup = last_action['data']
             self.measurements = measurements_backup
             
+            # Restore measurements to tree
             for measure in self.measurements:
                 if 'comment' in measure:
                     self._add_item_to_tree(self.measurements_tree, measure, "Measure")
@@ -2852,6 +2937,7 @@ class SlicerApp:
 
 
     def redo_action(self):
+        """Modified redo to handle area measurements"""
         if not self.redo_stack:
             self.status_label.config(text="Nothing to redo")
             return
@@ -2860,6 +2946,7 @@ class SlicerApp:
         self.history_stack.append(redo_action)
         
         if redo_action['type'] == 'draw':
+            # Redo drawing
             stroke = redo_action['data']
             plane, slice_idx = stroke['plane'], stroke['slice']
             
@@ -2876,6 +2963,7 @@ class SlicerApp:
             self.status_label.config(text=f"Redo: Restored drawing {stroke['id']}")
             
         elif redo_action['type'] == 'measure':
+            # Redo distance measurement
             measure = redo_action['data']
             self.measurements.append(measure)
 
@@ -2885,6 +2973,7 @@ class SlicerApp:
             self.status_label.config(text=f"Redo: Restored measurement {measure['id']}")
         
         elif redo_action['type'] == 'area':
+            # Redo area measurement
             area = redo_action['data']
             self.measurements.append(area)
 
@@ -2894,6 +2983,7 @@ class SlicerApp:
             self.status_label.config(text=f"Redo: Restored area measurement {area['id']}")
         
         elif redo_action['type'] == 'delete_draw':
+            # Redo drawing deletion
             stroke = redo_action['data']
             plane, slice_idx = stroke['plane'], stroke['slice']
             if plane in self.drawings and slice_idx in self.drawings[plane]:
@@ -2910,6 +3000,7 @@ class SlicerApp:
                 self.status_label.config(text=f"Redo: Deleted drawing {stroke['id']}")
         
         elif redo_action['type'] == 'delete_measure':
+            # Redo measurement deletion
             measure = redo_action['data']
             self.measurements = [m for m in self.measurements if m['id'] != measure['id']]
 
@@ -2920,6 +3011,7 @@ class SlicerApp:
             self.status_label.config(text=f"Redo: Deleted measurement {measure['id']}")
         
         elif redo_action['type'] == 'edit_draw_comment':
+            # Redo drawing comment edit
             data = redo_action['data']
             for plane, slices in self.drawings.items():
                 for slice_idx, strokes in slices.items():
@@ -2936,6 +3028,7 @@ class SlicerApp:
                             break
         
         elif redo_action['type'] == 'edit_measure_comment':
+            # Redo measurement comment edit
             data = redo_action['data']
             for measure in self.measurements:
                 if measure.get('id') == data['id']:
@@ -2950,6 +3043,7 @@ class SlicerApp:
                     break
         
         elif redo_action['type'] == 'add_draw_comment':
+            # Redo adding drawing comment
             data = redo_action['data']
             for plane, slices in self.drawings.items():
                 for slice_idx, strokes in slices.items():
@@ -2961,6 +3055,7 @@ class SlicerApp:
                             break
         
         elif redo_action['type'] == 'add_measure_comment':
+            # Redo adding measurement comment
             data = redo_action['data']
             for measure in self.measurements:
                 if measure.get('id') == data['id']:
@@ -2970,6 +3065,7 @@ class SlicerApp:
                     break
         
         elif redo_action['type'] == 'clear_drawings':
+            # Redo clearing all drawings
             self.drawings.clear()
             self.last_drawn_stroke = None
             
@@ -2978,6 +3074,7 @@ class SlicerApp:
             self.status_label.config(text="Redo: Cleared all drawings")
         
         elif redo_action['type'] == 'clear_measurements':
+            # Redo clearing all measurements
             self.measurements.clear()
             self.last_measurement = None
             self.last_area = None
@@ -2990,6 +3087,7 @@ class SlicerApp:
         self.update_all_views()
 
     def _find_most_recent_area(self):
+        """Find the most recent area measurement"""
         most_recent = None
         highest_id = -1
         for measure in self.measurements:
@@ -3094,6 +3192,7 @@ class SlicerApp:
                     return
 
     def edit_annotation_comment(self):
+        """Fixed to handle proper tree updates"""
         selected_drawing = self.drawings_tree.selection()
         selected_measure = self.measurements_tree.selection()
         
@@ -3168,6 +3267,7 @@ class SlicerApp:
                     return
 
     def _update_annotation_in_tree(self, tree, item_id, annotation_data):
+        """Fixed method to update existing tree items"""
         if not tree.exists(item_id):
             return
             
@@ -3180,7 +3280,7 @@ class SlicerApp:
         elif 'dist_mm' in annotation_data:  # Distance measurement
             measurement_info = f"Distance: {annotation_data['dist_mm']:.2f}mm"
             text = f"({plane_name} {annotation_data['slice']}) {measurement_info} - {comment}"
-        else:  
+        else:  # Drawing
             text = f"({plane_name} {annotation_data['slice']}) {comment}"
         
         tree.item(item_id, text=text, values=(text,))
