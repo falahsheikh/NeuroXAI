@@ -280,6 +280,167 @@ class ContentWindow(Frame):
             "Consensus Overlay"
         ]
         return self.title not in no_blur_windows
+    
+class ModelValidator:
+    
+    @staticmethod
+    def validate_model(model):
+        model_info = {
+            'architecture': 'Unknown',
+            'output_shape': None,
+            'num_classes': 0,
+            'conv_layers': 0,
+            'total_layers': 0,
+            'total_params': 0
+        }
+        
+        try:
+            model_info['total_layers'] = len(model.layers)
+            model_info['total_params'] = model.count_params()
+            
+            conv_layers = []
+            for layer in model.layers:
+                if isinstance(layer, (tf.keras.layers.Conv2D, tf.keras.layers.Conv1D, tf.keras.layers.Conv3D)):
+                    conv_layers.append(layer.name)
+            model_info['conv_layers'] = len(conv_layers)
+            
+            model_info['architecture'] = ModelValidator._detect_architecture(model)
+            
+            output_shape = model.output_shape
+            model_info['output_shape'] = output_shape
+            
+            if isinstance(output_shape, tuple):
+                num_classes = output_shape[-1]
+            elif isinstance(output_shape, list):
+                num_classes = output_shape[0][-1]
+            else:
+                num_classes = 0
+                
+            model_info['num_classes'] = num_classes
+            
+            if num_classes != 3:
+                warning_msg = f"""
+MODEL VALIDATION WARNING
+
+The loaded model has {num_classes} output classes, but this tool requires exactly 3 classes for CN/EMCI/LMCI classification.
+
+Model Information:
+- Architecture: {model_info['architecture']}
+- Output Classes: {num_classes}
+- Required Classes: 3 (CN, EMCI, LMCI)
+- Conv Layers: {model_info['conv_layers']}
+- Total Parameters: {model_info['total_params']:,}
+
+SOLUTIONS:
+1. Retrain your model with 3 output classes (CN, EMCI, LMCI)
+2. Modify the final layer to have 3 outputs
+3. Use a different model trained for tri-class Alzheimer's classification
+
+The model will be loaded but predictions may not be meaningful.
+Continue loading this model?"""
+                return False, warning_msg, model_info
+            
+            # Check if model has convolutional layers for XAI
+            if model_info['conv_layers'] == 0:
+                warning_msg = f"""
+XAI COMPATIBILITY WARNING
+
+The loaded model has no convolutional layers detected.
+
+Model Information:
+- Architecture: {model_info['architecture']}
+- Conv Layers: 0
+- Total Layers: {model_info['total_layers']}
+
+IMPACT:
+XAI visualizations (Grad-CAM++, Guided Grad-CAM++) require convolutional layers.
+Only basic prediction analysis will be available.
+
+SOLUTIONS:
+1. Use a CNN-based model (ResNet, EfficientNet, VGG, etc.)
+2. Add convolutional layers to your architecture
+3. The tool will work but with limited XAI features
+
+Continue loading this model?"""
+                return False, warning_msg, model_info
+            
+            success_msg = f"""
+MODEL VALIDATION SUCCESSFUL
+
+The model meets tri-class classification requirements.
+
+Model Information:
+- Architecture: {model_info['architecture']}
+- Output Classes: {num_classes} ✓
+- Conv Layers: {model_info['conv_layers']} ✓
+- Total Parameters: {model_info['total_params']:,}
+
+Model is ready for CN/EMCI/LMCI analysis."""
+            
+            return True, success_msg, model_info
+            
+        except Exception as e:
+            error_msg = f"""
+MODEL VALIDATION ERROR
+
+Failed to validate model: {str(e)}
+
+POSSIBLE ISSUES:
+1. Corrupted model file
+2. Incompatible Keras/TensorFlow version
+3. Custom layers not supported
+
+SOLUTIONS:
+1. Re-save your model in compatible format (.keras or .h5)
+2. Check TensorFlow version compatibility
+3. Ensure all custom layers are included
+
+Please check the model file and try again."""
+            return False, error_msg, model_info
+    
+    @staticmethod
+    def _detect_architecture(model):
+        """Detect the model architecture based on layer patterns"""
+        try:
+            model_name = model.name.lower()
+            
+            if 'efficientnet' in model_name:
+                return 'EfficientNet'
+            elif 'resnet' in model_name:
+                return 'ResNet'
+            elif 'vgg' in model_name:
+                return 'VGG'
+            elif 'densenet' in model_name:
+                return 'DenseNet'
+            elif 'mobilenet' in model_name:
+                return 'MobileNet'
+            elif 'inception' in model_name:
+                return 'Inception'
+            elif 'xception' in model_name:
+                return 'Xception'
+            
+            layer_types = [type(layer).__name__ for layer in model.layers]
+            
+            if 'DepthwiseConv2D' in layer_types:
+                return 'MobileNet-like'
+            elif 'BatchNormalization' in layer_types and 'GlobalAveragePooling2D' in layer_types:
+                return 'Modern CNN'
+            elif 'MaxPooling2D' in layer_types:
+                return 'Traditional CNN'
+            else:
+                return 'Custom Architecture'
+                
+        except:
+            return 'Unknown Architecture'
+
+REQUIRED_CLASS_NAMES = ['CN', 'EMCI', 'LMCI']
+REQUIRED_CLASS_DESCRIPTIONS = {
+    'CN': 'Cognitively Normal',
+    'EMCI': 'Early Mild Cognitive Impairment',
+    'LMCI': 'Late Mild Cognitive Impairment'
+}
+CLASS_NAMES = REQUIRED_CLASS_NAMES.copy()
+CLASS_DESCRIPTIONS = REQUIRED_CLASS_DESCRIPTIONS.copy()
 
 class EnhancedMedicalNavigationToolbar(NavigationToolbar2Tk):
 
@@ -319,19 +480,22 @@ class XAIProcessor:
         }
 
     def _get_conv_layers(self):
-        """Extract all convolutional layer names from the model"""
         conv_layers = []
         for layer in self.model.layers:
-            if isinstance(layer, tf.keras.layers.Conv2D):
+            if isinstance(layer, (
+                tf.keras.layers.Conv2D,
+                tf.keras.layers.Conv1D, 
+                tf.keras.layers.Conv3D,
+                tf.keras.layers.DepthwiseConv2D,
+                tf.keras.layers.SeparableConv2D
+            )):
                 conv_layers.append(layer.name)
         return conv_layers
     
     def get_available_layers(self):
-        """Return list of available convolutional layers"""
         return self.conv_layers.copy()
     
     def set_layer_for_method(self, method, layer_name):
-        """Set the layer to use for a specific XAI method"""
         if layer_name not in self.conv_layers:
             raise ValueError(f"Layer {layer_name} not found in model. Available layers: {self.conv_layers}")
         
@@ -343,7 +507,6 @@ class XAIProcessor:
         print(f"Set {method} to use layer: {layer_name}")
 
     def get_layer_for_method(self, method):
-        """Get the currently selected layer for a method"""
         return self.selected_layers.get(method, self.conv_layers[-1] if self.conv_layers else None)
     
     def _get_num_classes(self):
@@ -359,22 +522,20 @@ class XAIProcessor:
             
     def _update_class_info(self):
         global CLASS_NAMES, CLASS_DESCRIPTIONS
-        if self.num_classes == 1:
-            CLASS_NAMES, CLASS_DESCRIPTIONS = ['Binary'], {'Binary': 'Binary Classification Output'}
-        elif self.num_classes == 2:
-            CLASS_NAMES, CLASS_DESCRIPTIONS = ['Class_0', 'Class_1'], {'Class_0': 'Class 0 (e.g., Normal)', 'Class_1': 'Class 1 (e.g., Abnormal)'}
-        elif self.num_classes == 3:
-            CLASS_NAMES, CLASS_DESCRIPTIONS = DEFAULT_CLASS_NAMES.copy(), DEFAULT_CLASS_DESCRIPTIONS.copy()
+        
+        CLASS_NAMES = REQUIRED_CLASS_NAMES.copy()
+        CLASS_DESCRIPTIONS = REQUIRED_CLASS_DESCRIPTIONS.copy()
+        
+        if self.num_classes != 3:
+            print(f"WARNING: Model has {self.num_classes} classes but tool requires 3 (CN, EMCI, LMCI)")
+            print("Predictions may not be meaningful - consider retraining the model")
         else:
-            CLASS_NAMES = [f'Class_{i}' for i in range(self.num_classes)]
-            CLASS_DESCRIPTIONS = {name: f'Class {i}' for i, name in enumerate(CLASS_NAMES)}
-        print(f"Model detected with {self.num_classes} classes: {CLASS_NAMES}")
+            print(f"Model validated with {self.num_classes} classes: {CLASS_NAMES}")
         
     def validate_class_index(self, class_idx):
         return min(class_idx, self.num_classes - 1)
         
     def find_last_conv_layer(self):
-        """Deprecated: Use get_layer_for_method instead"""
         for layer in reversed(self.model.layers):
             if isinstance(layer, tf.keras.layers.Conv2D): 
                 return layer.name
@@ -392,11 +553,9 @@ class XAIProcessor:
         return heatmap * mask
         
     def make_gradcam_plus_plus(self, img_array, target_class_idx, layer_name=None):
-        """Generate Grad-CAM++ using specified or default layer"""
         target_class_idx = self.validate_class_index(target_class_idx)
         img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32) if isinstance(img_array, np.ndarray) else img_array
         
-        # Use specified layer or default for gradcam
         if layer_name is None:
             layer_name = self.get_layer_for_method('gradcam')
         
@@ -441,7 +600,6 @@ class XAIProcessor:
             return np.zeros(IMG_SIZE)
             
     def make_guided_backprop(self, img_array, target_class_idx):
-        """Guided backprop doesn't use specific conv layers, works on input"""
         target_class_idx = self.validate_class_index(target_class_idx)
         try:
             img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32) if isinstance(img_array, np.ndarray) else img_array
@@ -478,9 +636,7 @@ class XAIProcessor:
             return np.zeros(IMG_SIZE)
 
     def make_guided_gradcam_plus_plus(self, img_array, target_class_idx, layer_name=None):
-        """Generate Guided Grad-CAM++ using specified or default layer"""
         try:
-            # Use specified layer or default for guided_gradcam
             if layer_name is None:
                 layer_name = self.get_layer_for_method('guided_gradcam')
             
@@ -507,7 +663,6 @@ class XAIProcessor:
         return smoothed_guided
         
     def create_consensus_map(self, heatmaps, weights=None):
-        """Create consensus map from multiple heatmaps"""
         if not heatmaps: 
             return None
         weights = [1.0] * len(heatmaps) if weights is None else weights
@@ -523,7 +678,6 @@ class XAIProcessor:
         return np.average(np.array(normalized_heatmaps), axis=0, weights=weights)
         
     def create_overlay(self, heatmap, original_img_rgb, alpha=0.6, colormap=cv2.COLORMAP_JET):
-        """Create overlay of heatmap on original image"""
         heatmap = heatmap.numpy() if hasattr(heatmap, 'numpy') else heatmap
         original_img_rgb = original_img_rgb.numpy() if hasattr(original_img_rgb, 'numpy') else original_img_rgb
         
@@ -921,7 +1075,6 @@ class LayerSelectionDialog:
     def apply_layer_to_method_simple(self, layer_name, method):
         try:
             if method == 'all':
-                # Apply to all methods
                 for method_key in self.layer_vars.keys():
                     self.layer_vars[method_key].set(layer_name)
                 message = f"Layer '{layer_name}' applied to all methods"
@@ -1050,7 +1203,6 @@ class MedicalXAIInterface:
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def load_default_model_with_status(self):
-        """Enhanced model loading with layer configuration button activation"""
         try:
             self.update_status_with_progress("Loading AI model...", 10)
             
@@ -1064,16 +1216,13 @@ class MedicalXAIInterface:
             self.update_status_with_progress("Loading EfficientNetV2B0 model...", 30)
             self.root.update()
             
-            # Load model
             self.model = tf.keras.models.load_model(model_path)
             
             self.update_status_with_progress("Initializing XAI processor...", 60)
             self.root.update()
             
-            # Initialize XAI processor
             self.xai_processor = XAIProcessor(self.model)
             
-            # Enable layer configuration button
             self.layer_config_btn.config(state=tk.NORMAL)
             
             self.update_status_with_progress("EfficientNetV2B0 model loaded successfully", 100)
@@ -1096,14 +1245,12 @@ class MedicalXAIInterface:
                 window.remove_blur()
 
     def create_interface(self):
-        """Enhanced interface creation with themed layer selection button"""
         self.toolbar_frame = ttk.Frame(self.root)
         self.toolbar_frame.pack(fill=tk.X, padx=5, pady=5)
 
         ttk.Button(self.toolbar_frame, text="Upload Coronal MRI Slice", command=self.upload_image).pack(side=tk.LEFT, padx=5)
         ttk.Button(self.toolbar_frame, text="Load Custom Model", command=self.load_model_dialog).pack(side=tk.LEFT, padx=5)
         
-        # Layer configuration button with enhanced styling
         self.layer_config_btn = ttk.Button(
             self.toolbar_frame, 
             text="Configure XAI Layers", 
@@ -1137,7 +1284,6 @@ class MedicalXAIInterface:
         self.progress.pack(side=tk.LEFT, padx=15)
         self.progress['value'] = 0
 
-        # Continue with the rest of your interface creation...
         self.paned_window_container = ttk.Frame(self.root)
         self.paned_window_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -1165,7 +1311,6 @@ class MedicalXAIInterface:
             self.windows[title] = window
 
     def show_layer_selection_dialog(self):
-        """Show the themed layer selection dialog with reanalyze option"""
         if not self.xai_processor:
             messagebox.showwarning("Warning", "Please load an AI model first")
             return
@@ -1176,14 +1321,12 @@ class MedicalXAIInterface:
         if result and result.get('applied', False):
             selections = result.get('selections', {})
             
-            # Show confirmation message
             message = "Layer configuration updated:\n"
             for method, layer in selections.items():
                 method_name = method.replace('_', ' ').title()
                 message += f"• {method_name}: {layer}\n"
             
             if result.get('reanalyze', False):
-                # User clicked "Apply & Re-analyze"
                 if hasattr(self, 'visualization_data') and hasattr(self, 'current_image_path'):
                     message += "\nRe-analyzing with new layer configuration..."
                     messagebox.showinfo("Configuration Updated", message)
@@ -1192,7 +1335,6 @@ class MedicalXAIInterface:
                     messagebox.showinfo("Configuration Updated", 
                         message + "\nPlease upload an MRI image to analyze with new settings.")
             else:
-                # User clicked "Apply Only"
                 messagebox.showinfo("Configuration Updated", message)
 
     def reset_view(self): 
@@ -1363,53 +1505,82 @@ class MedicalXAIInterface:
             print(f"Could not load default model: {e}")
 
     def load_model_dialog(self):
-        """Enhanced model loading dialog with layer configuration"""
         path = filedialog.askopenfilename(
             title="Select AI Model File",
             filetypes=[("Keras Models", "*.keras *.h5"), ("All Files", "*.*")])
         
         if path:
             try:
-                self.update_status_with_progress("Loading custom model...", 20)
+                self.update_status_with_progress("Loading model...", 20)
                 self.root.update()
                 
-                self.model = tf.keras.models.load_model(path)
+                model = tf.keras.models.load_model(path)
                 
-                self.update_status_with_progress("Initializing XAI processor...", 60)
+                self.update_status_with_progress("Validating model...", 40)
                 self.root.update()
                 
+                is_valid, message, model_info = ModelValidator.validate_model(model)
+                
+                if not is_valid:
+                    result = messagebox.askyesno(
+                        "Model Validation Warning", 
+                        message,
+                        icon='warning'
+                    )
+                    
+                    if not result:
+                        self.update_status_with_progress("Model loading cancelled", 0)
+                        return
+                    else:
+                        messagebox.showinfo(
+                            "Proceeding with Warnings",
+                            "Model loaded with warnings. Some features may be limited."
+                        )
+                else:
+                    messagebox.showinfo("Model Validation", message)
+                
+                self.update_status_with_progress("Initializing XAI processor...", 70)
+                self.root.update()
+                
+                self.model = model
                 self.xai_processor = XAIProcessor(self.model)
                 
-                # Enable layer configuration button
                 self.layer_config_btn.config(state=tk.NORMAL)
                 
-                self.update_status_with_progress("Custom model loaded successfully", 100)
+                self.update_status_with_progress("Model loaded successfully", 100)
+                
+                self.show_model_info(model_info, os.path.basename(path))
                 
                 self.root.after(1500, lambda: self.update_status_with_progress(
-                    "Upload MRI image to begin analysis", 0
+                    "Ready - Upload MRI image to begin analysis", 0
                 ))
-                
-                # Show model info without overwhelming detail
-                available_layers = self.xai_processor.get_available_layers()
-                layer_info = f"Model loaded successfully!\n{os.path.basename(path)}\n\nFound {len(available_layers)} convolutional layers"
-                
-                if available_layers:
-                    # Show first few and last few layers
-                    if len(available_layers) <= 5:
-                        layer_info += f"\nLayers: {', '.join(available_layers)}"
-                    else:
-                        first_two = ', '.join(available_layers[:2])
-                        last_two = ', '.join(available_layers[-2:])
-                        layer_info += f"\nFirst: {first_two}\nLast: {last_two}"
-                        layer_info += f"\n(+{len(available_layers)-4} more layers)"
-                
-                layer_info += "\n\nUse 'Configure XAI Layers' to customize analysis."
-                
-                messagebox.showinfo("Model Loaded", layer_info)
                 
             except Exception as e:
                 self.update_status_with_progress("Model loading failed", 0)
                 messagebox.showerror("Error", f"Could not load model:\n{str(e)}")
+
+    def show_model_info(self, model_info, filename):
+        available_layers = self.xai_processor.get_available_layers()
+        
+        info_text = f"Model: {filename}\n\n"
+        info_text += f"Architecture: {model_info['architecture']}\n"
+        info_text += f"Total Parameters: {model_info['total_params']:,}\n"
+        info_text += f"Output Classes: {model_info['num_classes']}\n"
+        info_text += f"Conv Layers: {model_info['conv_layers']}\n\n"
+        
+        if available_layers:
+            if len(available_layers) <= 5:
+                info_text += f"Conv Layers: {', '.join(available_layers)}\n\n"
+            else:
+                first_two = ', '.join(available_layers[:2])
+                last_two = ', '.join(available_layers[-2:])
+                info_text += f"First Layers: {first_two}\n"
+                info_text += f"Last Layers: {last_two}\n"
+                info_text += f"(+{len(available_layers)-4} more layers)\n\n"
+        
+        info_text += "Use 'Configure XAI Layers' to customize analysis."
+        
+        messagebox.showinfo("Model Information", info_text)
 
     def update_status_with_progress(self, message, progress_value):
         self.status_var.set(message)
@@ -1440,7 +1611,6 @@ class MedicalXAIInterface:
                 messagebox.showerror("Error", f"Could not load image:\n{str(e)}")
 
     def analyze_image(self):
-        """Enhanced image analysis with better layer status reporting"""
         if not hasattr(self, 'current_image_path') or not self.model:
             messagebox.showwarning("Warning", "Please load both model and MRI image first")
             return
@@ -1469,12 +1639,10 @@ class MedicalXAIInterface:
                 'class_descriptions': CLASS_DESCRIPTIONS
             }
             
-            # Get selected layers for each method
             gradcam_layer = self.xai_processor.get_layer_for_method('gradcam')
             guided_layer = self.xai_processor.get_layer_for_method('guided_gradcam')
             consensus_layer = self.xai_processor.get_layer_for_method('consensus')
             
-            # Truncate layer names for status display
             def truncate_layer_name(name, max_len=12):
                 return name if len(name) <= max_len else f"...{name[-(max_len-3):]}"
             
@@ -1520,14 +1688,12 @@ class MedicalXAIInterface:
             self.update_status_with_progress("Populating windows...", 90)
             self.populate_all_windows()
             
-            # Compact status message
             layer_summary = f"GC:{gc_short}, G:{guided_short}"
             self.update_status_with_progress(
                 f"Complete: {predicted_label} ({confidence:.1%}) | {layer_summary}", 
                 100
             )
             
-            # Reset progress after delay
             self.root.after(4000, lambda: self.update_status_with_progress(
                 "Ready - Configure layers or load new image", 0
             ))
@@ -1543,23 +1709,18 @@ class MedicalXAIInterface:
         img = tf.keras.preprocessing.image.load_img(img_path, color_mode='grayscale')
         array = tf.keras.preprocessing.image.img_to_array(img)
         
-        # Convert to 2D for preprocessing
         if len(array.shape) == 3:
-            slice_data = array[:, :, 0]  # Take first channel if grayscale
+            slice_data = array[:, :, 0] 
         else:
             slice_data = array
         
-        # Apply preprocessing pipeline from the research
         processed_slice = MedicalImageProcessor.crop_and_resize_slice(slice_data, target_size=IMG_SIZE)
         
-        # Normalize intensity to 0-255 range
         if np.max(processed_slice) > 0:
             processed_slice = cv2.normalize(processed_slice, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
         
-        # Convert back to RGB for model
         rgb_img = cv2.cvtColor(processed_slice.astype(np.uint8), cv2.COLOR_GRAY2RGB)
         
-        # Prepare for model inference
         array = tf.keras.preprocessing.image.img_to_array(rgb_img)
         original_img = array.copy()
         array_preprocessed = tf.keras.applications.efficientnet_v2.preprocess_input(np.expand_dims(array, axis=0))
@@ -1730,11 +1891,9 @@ Status: {'PASS' if prediction['confidence'] >= 0.7 else 'REVIEW'}
         self.windows["Grad-CAM++ Overlay"].set_content(fig3)
 
     def create_gradcam_stats_window(self):
-        """Enhanced Grad-CAM stats window with layer information"""
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 8))
         gcpp_data = self.visualization_data['gcpp_masked']
         
-        # Get the layer used for this analysis
         selected_layer = self.visualization_data.get('selected_layers', {}).get('gradcam', 'Unknown')
         
         ax1.hist(gcpp_data.flatten(), bins=50, alpha=0.7, color='#3498db', edgecolor='black')
@@ -1807,11 +1966,9 @@ Status: {'PASS' if prediction['confidence'] >= 0.7 else 'REVIEW'}
         self.windows["Guided Grad-CAM++ Overlay"].set_content(fig3)
 
     def create_guided_stats_window(self):
-        """Enhanced Guided Grad-CAM stats window with layer information"""
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 8))
         guided_data = self.visualization_data['guided_gcpp_masked']
         
-        # Get the layer used for this analysis
         selected_layer = self.visualization_data.get('selected_layers', {}).get('guided_gradcam', 'Unknown')
         
         x, y = np.arange(guided_data.shape[1]), np.arange(guided_data.shape[0])
@@ -2043,7 +2200,6 @@ RECOMMENDATIONS
             messagebox.showerror("Error", f"Failed to save medical report:\n{str(e)}")
 
     def clear_analysis(self):
-        """Enhanced clear analysis with layer config state preservation"""
         try:
             self.update_status_with_progress("Clearing analysis...", 50)
             
@@ -2068,7 +2224,6 @@ RECOMMENDATIONS
                 
             self.update_status_with_progress("Analysis cleared", 100)
             
-            # Show layer config status if available
             status_msg = "Upload MRI to begin analysis"
             if self.xai_processor:
                 status_msg += " (layers configured)"
@@ -2092,6 +2247,7 @@ RECOMMENDATIONS
             self.root.destroy()
 
 def main():
+    
     def start_main_app():
         plt.style.use('default')
         plt.rcParams.update({
