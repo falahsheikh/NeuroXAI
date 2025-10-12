@@ -1,334 +1,408 @@
 #!/usr/bin/env python3
 """
-Hardware Performance Measurement for NeuroXAI Tool
-Run this script to measure actual memory usage, inference time, and system requirements
+NeuroXAI Program Requirements Test
+Tests program dependencies, resource usage, and compatibility
+Independent of specific hardware performance
 """
 
 import os
 import sys
-import time
 import psutil
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-import tracemalloc
-import gc
 from pathlib import Path
 import json
 from datetime import datetime
+import gc
+import tracemalloc
 
-class PerformanceProfiler:
+class ProgramRequirementsTest:
     def __init__(self):
         self.results = {
-            'system_info': self.get_system_info(),
-            'measurements': []
-        }
-        
-    def get_system_info(self):
-        """Get system specifications"""
-        return {
-            'cpu_count': psutil.cpu_count(),
-            'cpu_freq': psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None,
-            'memory_total_gb': round(psutil.virtual_memory().total / (1024**3), 2),
-            'platform': sys.platform,
-            'python_version': sys.version,
-            'tensorflow_version': tf.__version__
+            'program_info': {
+                'name': 'NeuroXAI',
+                'version': '1.0',
+                'description': 'Lightweight Explainable Deep Learning for Early Alzheimer\'s Detection'
+            },
+            'requirements': {},
+            'compatibility': {},
+            'resource_usage': {}
         }
     
-    def measure_model_loading(self, model_path):
-        """Measure model loading time and memory"""
-        print(f"Measuring model loading performance for: {model_path}")
+    def test_python_compatibility(self):
+        """Test Python version requirements"""
+        version = sys.version_info
         
-        # Start memory tracking
-        tracemalloc.start()
-        process = psutil.Process()
-        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+        # Define minimum requirements
+        min_major, min_minor = 3, 8
+        compatible = version.major >= min_major and version.minor >= min_minor
         
-        start_time = time.time()
+        self.results['requirements']['python'] = {
+            'minimum_version': f'{min_major}.{min_minor}',
+            'current_version': f'{version.major}.{version.minor}.{version.micro}',
+            'compatible': compatible,
+            'required': True
+        }
         
-        try:
-            model = load_model(model_path)
-            load_time = time.time() - start_time
-            
-            # Memory after loading
-            current_memory = process.memory_info().rss / 1024 / 1024  # MB
-            current, peak = tracemalloc.get_traced_memory()
-            tracemalloc.stop()
-            
-            model_size_mb = self.get_model_size_mb(model_path)  # Use file path instead of model object
-            
-            result = {
-                'operation': 'model_loading',
-                'model_path': model_path,
-                'load_time_seconds': round(load_time, 4),
-                'memory_usage_mb': round(current_memory - initial_memory, 2),
-                'peak_memory_mb': round(peak / 1024 / 1024, 2),
-                'model_size_mb': model_size_mb,
-                'model_parameters': model.count_params()
+        return compatible
+    
+    def test_core_dependencies(self):
+        """Test required Python packages"""
+        core_packages = {
+            'tensorflow': {
+                'minimum_version': '2.8.0',
+                'purpose': 'Deep learning model execution',
+                'required': True
+            },
+            'numpy': {
+                'minimum_version': '1.19.0',
+                'purpose': 'Numerical computations',
+                'required': True
+            },
+            'opencv-python': {
+                'minimum_version': '4.5.0',
+                'purpose': 'Image processing',
+                'required': True
+            },
+            'pillow': {
+                'minimum_version': '8.0.0',
+                'purpose': 'Image format support',
+                'required': True
+            },
+            'matplotlib': {
+                'minimum_version': '3.3.0',
+                'purpose': 'Visualization and plotting',
+                'required': True
+            },
+            'simpleitk': {
+                'minimum_version': '2.0.0',
+                'purpose': 'Medical image processing',
+                'required': True
+            },
+            'nibabel': {
+                'minimum_version': '3.2.0',
+                'purpose': 'NIfTI medical image format support',
+                'required': True
+            },
+            'scipy': {
+                'minimum_version': '1.7.0',
+                'purpose': 'Scientific computing',
+                'required': False
+            },
+            'scikit-learn': {
+                'minimum_version': '0.24.0',
+                'purpose': 'Machine learning utilities',
+                'required': False
             }
-            
-            print(f"✓ Model loaded in {load_time:.4f}s")
-            print(f"✓ Memory usage: {result['memory_usage_mb']:.2f} MB")
-            print(f"✓ Model size: {model_size_mb:.2f} MB")
-            
-            return model, result
-            
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            tracemalloc.stop()
-            return None, {'error': str(e)}
-    
-    def get_model_size_mb(self, model_path):
-        """Calculate model size in MB from file path"""
-        try:
-            size_mb = os.path.getsize(model_path) / 1024 / 1024
-            return round(size_mb, 2)
-        except:
-            return 0
-    
-    def measure_inference(self, model, sample_data, num_runs=10):
-        """Measure inference performance"""
-        print(f"Measuring inference performance ({num_runs} runs)...")
-        
-        process = psutil.Process()
-        
-        # Warm-up runs
-        for _ in range(3):
-            _ = model.predict(sample_data, verbose=0)
-        
-        times = []
-        memory_usage = []
-        
-        for i in range(num_runs):
-            gc.collect()
-            initial_memory = process.memory_info().rss / 1024 / 1024
-            
-            start_time = time.perf_counter()
-            predictions = model.predict(sample_data, verbose=0)
-            end_time = time.perf_counter()
-            
-            inference_time = end_time - start_time
-            current_memory = process.memory_info().rss / 1024 / 1024
-            
-            times.append(inference_time)
-            memory_usage.append(current_memory - initial_memory)
-        
-        result = {
-            'operation': 'inference',
-            'num_runs': num_runs,
-            'mean_inference_time_ms': round(np.mean(times) * 1000, 2),
-            'std_inference_time_ms': round(np.std(times) * 1000, 2),
-            'min_inference_time_ms': round(np.min(times) * 1000, 2),
-            'max_inference_time_ms': round(np.max(times) * 1000, 2),
-            'mean_memory_delta_mb': round(np.mean(memory_usage), 2),
-            'predictions_shape': predictions.shape,
-            'sample_prediction': predictions[0].tolist() if len(predictions) > 0 else None
         }
         
-        print(f"✓ Mean inference time: {result['mean_inference_time_ms']:.2f} ms")
-        print(f"✓ Memory delta: {result['mean_memory_delta_mb']:.2f} MB")
+        dependencies_status = {}
+        all_required_available = True
         
-        return result
-    
-    def measure_xai_performance(self, model, sample_data, target_layer_name=None):
-        """Measure XAI visualization generation performance"""
-        print("Measuring XAI visualization performance...")
-        
-        try:
-            # Import XAI components
-            from tensorflow.keras.models import Model
-            import cv2
-            
-            # Debug: Print model structure
-            print("Model architecture inspection:")
-            print(f"Model inputs: {model.input}")
-            print(f"Model outputs: {model.output}")
-            print(f"Model output shape: {model.output_shape}")
-            
-            # Find last conv layer if not specified
-            if target_layer_name is None:
-                conv_layers = []
-                for layer in model.layers:
-                    if 'conv' in layer.__class__.__name__.lower():
-                        conv_layers.append(layer.name)
-                        print(f"Found conv layer: {layer.name} - {layer.__class__.__name__}")
-                
-                if conv_layers:
-                    target_layer_name = conv_layers[-1]  # Use last conv layer
+        for package_name, info in core_packages.items():
+            try:
+                if package_name == 'opencv-python':
+                    import cv2
+                    version = cv2.__version__
+                elif package_name == 'pillow':
+                    import PIL
+                    version = PIL.__version__
                 else:
-                    return {'error': 'No convolutional layer found for XAI'}
-            
-            print(f"Using layer: {target_layer_name}")
-            
-            # Test the target layer exists - simplified approach
-            try:
-                target_layer = model.get_layer(target_layer_name)
-                print(f"Target layer found: {target_layer.name} ({target_layer.__class__.__name__})")
-            except Exception as e:
-                print(f"Error accessing target layer: {e}")
-                return {'error': f'Target layer {target_layer_name} not accessible: {str(e)}'}
-            
-            process = psutil.Process()
-            initial_memory = process.memory_info().rss / 1024 / 1024
-            
-            start_time = time.perf_counter()
-            
-            # Simplified approach - create gradient model and test immediately
-            try:
-                print("Creating and testing gradient model...")
+                    pkg = __import__(package_name)
+                    version = getattr(pkg, '__version__', 'unknown')
                 
-                # Create the gradient model
-                grad_model = Model(
-                    inputs=model.input,
-                    outputs=[target_layer.output, model.output]
-                )
-                print("Gradient model created successfully")
-                
-                # Test a forward pass first
-                test_outputs = grad_model(sample_data)
-                print(f"Forward pass successful. Output types: {[type(out) for out in test_outputs]}")
-                
-                # Now do the actual gradient computation
-                with tf.GradientTape() as tape:
-                    conv_outputs, predictions = grad_model(sample_data)
-                    
-                    # Handle predictions properly
-                    # The second output is a list, convert to tensor
-                    if isinstance(predictions, list):
-                        predictions = tf.convert_to_tensor(predictions[0])  # Take first element if it's a list
-                    else:
-                        predictions = tf.convert_to_tensor(predictions)
-                    
-                    if len(predictions.shape) == 1:
-                        predictions = tf.expand_dims(predictions, 0)
-                    
-                    # Get the predicted class - convert to scalar
-                    pred_idx = tf.argmax(predictions[0])
-                    pred_idx = tf.cast(pred_idx, tf.int32)  # Ensure it's int32
-                    
-                    # Use tf.gather instead of indexing
-                    class_output = tf.gather(predictions[0], pred_idx)
-                
-                # Compute gradients
-                grads = tape.gradient(class_output, conv_outputs)
-                
-                if grads is None:
-                    return {'error': 'Could not compute gradients - gradient is None'}
-                
-                print(f"Gradients computed successfully")
-                print(f"Conv outputs shape: {conv_outputs.shape}")
-                print(f"Gradients shape: {grads.shape}")
-                
-                # Simple Grad-CAM computation
-                # Remove batch dimension
-                conv_outputs = conv_outputs[0]  # [H, W, C]
-                grads = grads[0]  # [H, W, C]
-                
-                # Compute channel weights (average of gradients for each channel)
-                weights = tf.reduce_mean(grads, axis=(0, 1))  # [C]
-                
-                # Compute weighted combination of feature maps
-                heatmap = tf.reduce_sum(weights * conv_outputs, axis=2)  # [H, W]
-                
-                # Apply ReLU to focus on positive contributions
-                heatmap = tf.nn.relu(heatmap)
-                
-                # Normalize to [0, 1]
-                heatmap_max = tf.reduce_max(heatmap)
-                if heatmap_max > 0:
-                    heatmap = heatmap / heatmap_max
-                
-                # Resize to match input size (224, 224)
-                heatmap = tf.image.resize(heatmap[..., tf.newaxis], (224, 224))
-                heatmap = tf.squeeze(heatmap)
-                
-                end_time = time.perf_counter()
-                current_memory = process.memory_info().rss / 1024 / 1024
-                
-                # Prepare results
-                result = {
-                    'operation': 'xai_visualization',
-                    'target_layer': target_layer_name,
-                    'generation_time_ms': round((end_time - start_time) * 1000, 2),
-                    'memory_usage_mb': round(current_memory - initial_memory, 2),
-                    'heatmap_shape': heatmap.shape.as_list(),
-                    'heatmap_stats': {
-                        'min': float(tf.reduce_min(heatmap)),
-                        'max': float(tf.reduce_max(heatmap)),
-                        'mean': float(tf.reduce_mean(heatmap))
-                    }
+                dependencies_status[package_name] = {
+                    'available': True,
+                    'version': version,
+                    'minimum_required': info['minimum_version'],
+                    'purpose': info['purpose'],
+                    'required': info['required']
                 }
                 
-                print(f"✓ XAI generation time: {result['generation_time_ms']:.2f} ms")
-                print(f"✓ Memory usage: {result['memory_usage_mb']:.2f} MB")
-                print(f"✓ Heatmap shape: {result['heatmap_shape']}")
-                print(f"✓ Heatmap stats: min={result['heatmap_stats']['min']:.4f}, max={result['heatmap_stats']['max']:.4f}, mean={result['heatmap_stats']['mean']:.4f}")
+            except ImportError:
+                dependencies_status[package_name] = {
+                    'available': False,
+                    'version': None,
+                    'minimum_required': info['minimum_version'],
+                    'purpose': info['purpose'],
+                    'required': info['required']
+                }
                 
-                return result
-                
-            except Exception as e:
-                print(f"Error in XAI computation: {e}")
-                import traceback
-                traceback.print_exc()
-                return {'error': f'XAI computation failed: {str(e)}'}
-                
-        except Exception as e:
-            print(f"Error in XAI measurement: {e}")
-            import traceback
-            traceback.print_exc()
-            return {'error': str(e)}
+                if info['required']:
+                    all_required_available = False
+        
+        self.results['requirements']['dependencies'] = dependencies_status
+        return all_required_available
     
-    def create_sample_data(self, batch_size=1):
-        """Create sample data for testing"""
-        # Create synthetic MRI-like data
-        sample_data = np.random.rand(batch_size, 224, 224, 3).astype(np.float32)
-        sample_data = tf.keras.applications.efficientnet_v2.preprocess_input(sample_data)
-        return sample_data
+    def test_gui_support(self):
+        """Test GUI framework availability"""
+        gui_status = {}
+        
+        try:
+            import tkinter
+            gui_status['tkinter'] = {
+                'available': True,
+                'purpose': 'Main GUI framework',
+                'note': 'Usually included with Python installation'
+            }
+        except ImportError:
+            gui_status['tkinter'] = {
+                'available': False,
+                'purpose': 'Main GUI framework',
+                'note': 'May need separate installation on some Linux distributions'
+            }
+        
+        self.results['requirements']['gui'] = gui_status
+        return gui_status['tkinter']['available']
     
-    def run_full_performance_test(self, model_path, output_file="performance_results.json"):
-        """Run complete performance testing suite"""
-        print("=" * 60)
-        print("NeuroXAI Hardware Performance Testing")
-        print("=" * 60)
+    def test_model_compatibility(self, model_path=None):
+        """Test model loading and architecture compatibility"""
+        if not model_path:
+            # Look for model files
+            possible_paths = [
+                "exnModel/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras",
+                "training/models/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"
+            ]
+            
+            model_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    model_path = path
+                    break
         
-        # Test model loading
-        model, load_result = self.measure_model_loading(model_path)
-        if model is None:
-            print("Failed to load model. Exiting.")
-            return
-        
-        self.results['measurements'].append(load_result)
-        
-        # Create sample data
-        sample_data = self.create_sample_data()
-        
-        # Test inference
-        inference_result = self.measure_inference(model, sample_data)
-        self.results['measurements'].append(inference_result)
-        
-        # Test XAI
-        xai_result = self.measure_xai_performance(model, sample_data)
-        self.results['measurements'].append(xai_result)
-        
-        # Calculate total workflow time
-        total_time_ms = (
-            load_result.get('load_time_seconds', 0) * 1000 +
-            inference_result.get('mean_inference_time_ms', 0) +
-            xai_result.get('generation_time_ms', 0)
-        )
-        
-        workflow_result = {
-            'operation': 'complete_workflow',
-            'total_time_ms': round(total_time_ms, 2),
-            'inference_plus_xai_ms': round(
-                inference_result.get('mean_inference_time_ms', 0) + 
-                xai_result.get('generation_time_ms', 0), 2
-            )
+        model_info = {
+            'architecture': 'EfficientNetV2B0',
+            'input_shape': [224, 224, 3],
+            'output_classes': 3,
+            'class_names': ['CN', 'EMCI', 'LMCI']
         }
         
-        self.results['measurements'].append(workflow_result)
-        self.results['timestamp'] = datetime.now().isoformat()
+        if model_path and os.path.exists(model_path):
+            try:
+                model = tf.keras.models.load_model(model_path)
+                
+                model_info.update({
+                    'file_size_mb': round(os.path.getsize(model_path) / (1024**2), 2),
+                    'parameters': model.count_params(),
+                    'layers': len(model.layers),
+                    'trainable_parameters': int(np.sum([tf.keras.backend.count_params(w) for w in model.trainable_weights])),
+                    'loadable': True
+                })
+                
+                # Test if we can create the architecture without weights
+                try:
+                    test_model = tf.keras.applications.EfficientNetV2B0(
+                        weights=None,
+                        include_top=False,
+                        input_shape=(224, 224, 3)
+                    )
+                    model_info['architecture_available'] = True
+                    del test_model
+                except:
+                    model_info['architecture_available'] = False
+                
+                del model
+                
+            except Exception as e:
+                model_info.update({
+                    'loadable': False,
+                    'error': str(e)
+                })
+        else:
+            model_info.update({
+                'file_found': False,
+                'note': 'Model file not found at expected location'
+            })
+        
+        self.results['compatibility']['model'] = model_info
+        return model_info.get('loadable', False)
+    
+    def measure_memory_requirements(self, model_path=None):
+        """Measure program memory usage requirements"""
+        tracemalloc.start()
+        process = psutil.Process()
+        
+        baseline_memory = process.memory_info().rss / (1024**2)  # MB
+        
+        memory_profile = {
+            'baseline_mb': round(baseline_memory, 1)
+        }
+        
+        try:
+            # Test importing main libraries
+            import tensorflow as tf
+            import cv2
+            import matplotlib.pyplot as plt
+            
+            after_imports = process.memory_info().rss / (1024**2)
+            memory_profile['after_imports_mb'] = round(after_imports, 1)
+            memory_profile['import_overhead_mb'] = round(after_imports - baseline_memory, 1)
+            
+            # Test model loading if available
+            if model_path and os.path.exists(model_path):
+                model = tf.keras.models.load_model(model_path)
+                after_model = process.memory_info().rss / (1024**2)
+                memory_profile['after_model_load_mb'] = round(after_model, 1)
+                memory_profile['model_memory_mb'] = round(after_model - after_imports, 1)
+                
+                # Test inference memory
+                sample_data = np.random.rand(1, 224, 224, 3).astype(np.float32)
+                predictions = model.predict(sample_data, verbose=0)
+                after_inference = process.memory_info().rss / (1024**2)
+                memory_profile['after_inference_mb'] = round(after_inference, 1)
+                memory_profile['inference_memory_mb'] = round(after_inference - after_model, 1)
+                
+                # Test batch processing
+                batch_data = np.random.rand(10, 224, 224, 3).astype(np.float32)
+                batch_predictions = model.predict(batch_data, verbose=0)
+                after_batch = process.memory_info().rss / (1024**2)
+                memory_profile['peak_memory_mb'] = round(after_batch, 1)
+                memory_profile['batch_overhead_mb'] = round(after_batch - after_inference, 1)
+                
+                del model, sample_data, predictions, batch_data, batch_predictions
+            
+        except Exception as e:
+            memory_profile['error'] = str(e)
+        
+        gc.collect()
+        tracemalloc.stop()
+        
+        # Calculate recommended memory
+        peak_usage = memory_profile.get('peak_memory_mb', memory_profile.get('after_imports_mb', baseline_memory))
+        memory_profile['recommended_ram_gb'] = max(4, round((peak_usage * 2) / 1024, 0))  # 2x peak usage, min 4GB
+        
+        self.results['resource_usage']['memory'] = memory_profile
+        return memory_profile
+    
+    def test_file_format_support(self):
+        """Test supported file formats"""
+        formats = {
+            'medical_images': {
+                'nifti': {
+                    'extensions': ['.nii', '.nii.gz'],
+                    'library': 'nibabel',
+                    'supported': False
+                }
+            },
+            'standard_images': {
+                'png': {'extensions': ['.png'], 'library': 'PIL/OpenCV', 'supported': False},
+                'jpeg': {'extensions': ['.jpg', '.jpeg'], 'library': 'PIL/OpenCV', 'supported': False},
+                'tiff': {'extensions': ['.tif', '.tiff'], 'library': 'PIL/OpenCV', 'supported': False}
+            },
+            'models': {
+                'keras': {'extensions': ['.keras', '.h5'], 'library': 'tensorflow', 'supported': False}
+            }
+        }
+        
+        # Test medical image support
+        try:
+            import nibabel
+            formats['medical_images']['nifti']['supported'] = True
+        except ImportError:
+            pass
+        
+        # Test standard image support
+        try:
+            import cv2
+            from PIL import Image
+            formats['standard_images']['png']['supported'] = True
+            formats['standard_images']['jpeg']['supported'] = True
+            formats['standard_images']['tiff']['supported'] = True
+        except ImportError:
+            pass
+        
+        # Test model support
+        try:
+            import tensorflow as tf
+            formats['models']['keras']['supported'] = True
+        except ImportError:
+            pass
+        
+        self.results['compatibility']['file_formats'] = formats
+        return formats
+    
+    def test_platform_compatibility(self):
+        """Test platform and architecture support"""
+        import platform
+        
+        platform_info = {
+            'operating_system': platform.system(),
+            'architecture': platform.machine(),
+            'python_implementation': platform.python_implementation(),
+            'supported_platforms': {
+                'Windows': '10 or later',
+                'Darwin': 'macOS 10.14 or later',  # Darwin is macOS
+                'Linux': 'Ubuntu 18.04 or equivalent'
+            },
+            'current_platform_supported': platform.system() in ['Windows', 'Darwin', 'Linux']
+        }
+        
+        # Test CPU requirements
+        cpu_info = {
+            'cores_available': psutil.cpu_count(logical=False),
+            'threads_available': psutil.cpu_count(logical=True),
+            'minimum_recommended': 2,  # cores
+            'adequate_performance': psutil.cpu_count(logical=False) >= 2
+        }
+        
+        platform_info['cpu'] = cpu_info
+        self.results['compatibility']['platform'] = platform_info
+        return platform_info['current_platform_supported']
+    
+    def generate_requirements_summary(self):
+        """Generate final requirements summary"""
+        summary = {
+            'minimum_system_requirements': {
+                'python_version': '3.8 or later',
+                'ram': '4GB minimum, 8GB recommended',
+                'storage': '2GB free space (including model and dependencies)',
+                'cpu': '2+ cores recommended',
+                'gpu': 'Not required (CPU-only operation supported)',
+                'network': 'Optional (offline operation supported)'
+            },
+            'required_dependencies': [
+                'tensorflow>=2.8.0',
+                'numpy>=1.19.0',
+                'opencv-python>=4.5.0',
+                'pillow>=8.0.0',
+                'matplotlib>=3.3.0',
+                'simpleitk>=2.0.0',
+                'nibabel>=3.2.0',
+                'tkinter (usually included with Python)'
+            ],
+            'supported_formats': {
+                'input': ['NIfTI (.nii, .nii.gz)', 'PNG', 'JPEG', 'TIFF'],
+                'models': ['Keras (.keras)', 'HDF5 (.h5)'],
+                'output': ['PNG (visualizations)', 'JSON (reports)']
+            },
+            'supported_platforms': [
+                'Windows 10 or later',
+                'macOS 10.14 or later',
+                'Linux (Ubuntu 18.04 or equivalent)'
+            ]
+        }
+        
+        self.results['summary'] = summary
+        return summary
+    
+    def run_full_requirements_test(self, model_path=None, output_file="program_requirements.json"):
+        """Run complete program requirements test"""
+        print("=" * 60)
+        print("NeuroXAI Program Requirements Test")
+        print("=" * 60)
+        
+        # Run all tests
+        python_ok = self.test_python_compatibility()
+        deps_ok = self.test_core_dependencies()
+        gui_ok = self.test_gui_support()
+        model_ok = self.test_model_compatibility(model_path)
+        memory_profile = self.measure_memory_requirements(model_path)
+        formats = self.test_file_format_support()
+        platform_ok = self.test_platform_compatibility()
+        summary = self.generate_requirements_summary()
+        
+        # Add timestamp
+        self.results['test_timestamp'] = datetime.now().isoformat()
         
         # Save results
         with open(output_file, 'w') as f:
@@ -336,96 +410,51 @@ class PerformanceProfiler:
         
         # Print summary
         print("\n" + "=" * 60)
-        print("PERFORMANCE SUMMARY")
+        print("REQUIREMENTS TEST SUMMARY")
         print("=" * 60)
-        print(f"System: {self.results['system_info']['cpu_count']} CPU cores, "
-              f"{self.results['system_info']['memory_total_gb']} GB RAM")
-        print(f"Model Parameters: {load_result.get('model_parameters', 'N/A'):,}")
-        print(f"Model Size: {load_result.get('model_size_mb', 'N/A')} MB")
-        print(f"Inference Time: {inference_result.get('mean_inference_time_ms', 'N/A')} ms")
-        print(f"XAI Generation: {xai_result.get('generation_time_ms', 'N/A')} ms")
-        print(f"Total Workflow: {workflow_result['total_time_ms']} ms")
+        
+        print(f"✓ Python Version: {self.results['requirements']['python']['current_version']}")
+        
+        required_deps = [name for name, info in self.results['requirements']['dependencies'].items() 
+                        if info['required']]
+        available_deps = [name for name, info in self.results['requirements']['dependencies'].items() 
+                         if info['required'] and info['available']]
+        print(f"✓ Dependencies: {len(available_deps)}/{len(required_deps)} required packages available")
+        
+        if self.results['resource_usage']['memory']:
+            recommended_ram = self.results['resource_usage']['memory']['recommended_ram_gb']
+            print(f"✓ Recommended RAM: {recommended_ram}GB")
+        
+        print(f"✓ Platform: {self.results['compatibility']['platform']['operating_system']} "
+              f"({'supported' if platform_ok else 'check compatibility'})")
+        
+        print(f"\nProgram Status: {'READY' if all([python_ok, deps_ok, gui_ok]) else 'REQUIREMENTS NOT MET'}")
         print(f"Results saved to: {output_file}")
         
         return self.results
 
 def main():
-    """Main function to run performance tests"""
-    profiler = PerformanceProfiler()
+    """Main function to run requirements test"""
+    tester = ProgramRequirementsTest()
     
-    # Get the correct path to the model based on the project structure
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)  # Go up one level from Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
-    
-    # Try multiple possible model paths
-    possible_model_paths = [
-        # Path from the current script location
-        os.path.join(script_dir, "exnModel", "TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"),
-        # Path from project root
-        os.path.join(project_root, "training", "models", "TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"),
-        # Relative path from script location
-        os.path.join(script_dir, "..", "training", "models", "TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"),
-        # Direct relative path
+    # Look for model file
+    model_path = None
+    possible_paths = [
+        "exnModel/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras",
         "training/models/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"
     ]
     
-    model_path = None
-    for path in possible_model_paths:
-        abs_path = os.path.abspath(path)
-        if os.path.exists(abs_path):
-            model_path = abs_path
-            print(f"Found model at: {model_path}")
+    for path in possible_paths:
+        if os.path.exists(path):
+            model_path = path
             break
     
     if not model_path:
-        print("Model not found at any of the expected locations:")
-        for path in possible_model_paths:
-            abs_path = os.path.abspath(path)
-            print(f"  Checked: {abs_path} - {'EXISTS' if os.path.exists(abs_path) else 'NOT FOUND'}")
-        
-        print("\nLooking for .keras files in current directory and training/models:")
-        
-        # Search in current directory
-        current_dir = Path(".")
-        keras_files = list(current_dir.glob("*.keras")) + list(current_dir.glob("*.h5"))
-        
-        # Search in training/models if it exists
-        training_models_dir = Path("training/models")
-        if training_models_dir.exists():
-            keras_files.extend(list(training_models_dir.glob("*.keras")))
-            keras_files.extend(list(training_models_dir.glob("*.h5")))
-        
-        # Search in exnModel if it exists
-        exn_model_dir = Path("exnModel")
-        if exn_model_dir.exists():
-            keras_files.extend(list(exn_model_dir.glob("*.keras")))
-            keras_files.extend(list(exn_model_dir.glob("*.h5")))
-        
-        if keras_files:
-            print("Found model files:")
-            for i, file in enumerate(keras_files):
-                print(f"  {i+1}. {file}")
-            
-            try:
-                choice = input(f"\nEnter number (1-{len(keras_files)}) to test, or press Enter to exit: ")
-                if choice.strip():
-                    choice_idx = int(choice) - 1
-                    if 0 <= choice_idx < len(keras_files):
-                        model_path = str(keras_files[choice_idx])
-                    else:
-                        print("Invalid choice.")
-                        return
-                else:
-                    return
-            except ValueError:
-                print("Invalid input.")
-                return
-        else:
-            print("No .keras or .h5 files found.")
-            return
+        print("Note: Model file not found at expected locations.")
+        print("Memory requirements will be estimated based on architecture only.")
     
-    # Run the tests
-    results = profiler.run_full_performance_test(model_path)
+    # Run the test
+    results = tester.run_full_requirements_test(model_path)
     return results
 
 if __name__ == "__main__":

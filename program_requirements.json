@@ -1,0 +1,229 @@
+{
+  "program_info": {
+    "name": "NeuroXAI",
+    "version": "1.0",
+    "description": "Lightweight Explainable Deep Learning for Early Alzheimer's Detection"
+  },
+  "requirements": {
+    "python": {
+      "minimum_version": "3.8",
+      "current_version": "3.11.3",
+      "compatible": true,
+      "required": true
+    },
+    "dependencies": {
+      "tensorflow": {
+        "available": true,
+        "version": "2.19.0",
+        "minimum_required": "2.8.0",
+        "purpose": "Deep learning model execution",
+        "required": true
+      },
+      "numpy": {
+        "available": true,
+        "version": "1.26.4",
+        "minimum_required": "1.19.0",
+        "purpose": "Numerical computations",
+        "required": true
+      },
+      "opencv-python": {
+        "available": true,
+        "version": "4.11.0",
+        "minimum_required": "4.5.0",
+        "purpose": "Image processing",
+        "required": true
+      },
+      "pillow": {
+        "available": true,
+        "version": "10.4.0",
+        "minimum_required": "8.0.0",
+        "purpose": "Image format support",
+        "required": true
+      },
+      "matplotlib": {
+        "available": true,
+        "version": "3.10.0",
+        "minimum_required": "3.3.0",
+        "purpose": "Visualization and plotting",
+        "required": true
+      },
+      "simpleitk": {
+        "available": false,
+        "version": null,
+        "minimum_required": "2.0.0",
+        "purpose": "Medical image processing",
+        "required": true
+      },
+      "nibabel": {
+        "available": true,
+        "version": "5.2.1",
+        "minimum_required": "3.2.0",
+        "purpose": "NIfTI medical image format support",
+        "required": true
+      },
+      "scipy": {
+        "available": true,
+        "version": "1.15.1",
+        "minimum_required": "1.7.0",
+        "purpose": "Scientific computing",
+        "required": false
+      },
+      "scikit-learn": {
+        "available": false,
+        "version": null,
+        "minimum_required": "0.24.0",
+        "purpose": "Machine learning utilities",
+        "required": false
+      }
+    },
+    "gui": {
+      "tkinter": {
+        "available": true,
+        "purpose": "Main GUI framework",
+        "note": "Usually included with Python installation"
+      }
+    }
+  },
+  "compatibility": {
+    "model": {
+      "architecture": "EfficientNetV2B0",
+      "input_shape": [
+        224,
+        224,
+        3
+      ],
+      "output_classes": 3,
+      "class_names": [
+        "CN",
+        "EMCI",
+        "LMCI"
+      ],
+      "file_size_mb": 25.37,
+      "parameters": 6083667,
+      "layers": 273,
+      "trainable_parameters": 164355,
+      "loadable": true,
+      "architecture_available": true
+    },
+    "file_formats": {
+      "medical_images": {
+        "nifti": {
+          "extensions": [
+            ".nii",
+            ".nii.gz"
+          ],
+          "library": "nibabel",
+          "supported": true
+        }
+      },
+      "standard_images": {
+        "png": {
+          "extensions": [
+            ".png"
+          ],
+          "library": "PIL/OpenCV",
+          "supported": true
+        },
+        "jpeg": {
+          "extensions": [
+            ".jpg",
+            ".jpeg"
+          ],
+          "library": "PIL/OpenCV",
+          "supported": true
+        },
+        "tiff": {
+          "extensions": [
+            ".tif",
+            ".tiff"
+          ],
+          "library": "PIL/OpenCV",
+          "supported": true
+        }
+      },
+      "models": {
+        "keras": {
+          "extensions": [
+            ".keras",
+            ".h5"
+          ],
+          "library": "tensorflow",
+          "supported": true
+        }
+      }
+    },
+    "platform": {
+      "operating_system": "Darwin",
+      "architecture": "arm64",
+      "python_implementation": "CPython",
+      "supported_platforms": {
+        "Windows": "10 or later",
+        "Darwin": "macOS 10.14 or later",
+        "Linux": "Ubuntu 18.04 or equivalent"
+      },
+      "current_platform_supported": true,
+      "cpu": {
+        "cores_available": 8,
+        "threads_available": 8,
+        "minimum_recommended": 2,
+        "adequate_performance": true
+      }
+    }
+  },
+  "resource_usage": {
+    "memory": {
+      "baseline_mb": 516.3,
+      "after_imports_mb": 516.3,
+      "import_overhead_mb": 0.0,
+      "after_model_load_mb": 401.6,
+      "model_memory_mb": -114.7,
+      "after_inference_mb": 686.5,
+      "inference_memory_mb": 285.0,
+      "peak_memory_mb": 489.8,
+      "batch_overhead_mb": -196.7,
+      "recommended_ram_gb": 4
+    }
+  },
+  "summary": {
+    "minimum_system_requirements": {
+      "python_version": "3.8 or later",
+      "ram": "4GB minimum, 8GB recommended",
+      "storage": "2GB free space (including model and dependencies)",
+      "cpu": "2+ cores recommended",
+      "gpu": "Not required (CPU-only operation supported)",
+      "network": "Optional (offline operation supported)"
+    },
+    "required_dependencies": [
+      "tensorflow>=2.8.0",
+      "numpy>=1.19.0",
+      "opencv-python>=4.5.0",
+      "pillow>=8.0.0",
+      "matplotlib>=3.3.0",
+      "simpleitk>=2.0.0",
+      "nibabel>=3.2.0",
+      "tkinter (usually included with Python)"
+    ],
+    "supported_formats": {
+      "input": [
+        "NIfTI (.nii, .nii.gz)",
+        "PNG",
+        "JPEG",
+        "TIFF"
+      ],
+      "models": [
+        "Keras (.keras)",
+        "HDF5 (.h5)"
+      ],
+      "output": [
+        "PNG (visualizations)",
+        "JSON (reports)"
+      ]
+    },
+    "supported_platforms": [
+      "Windows 10 or later",
+      "macOS 10.14 or later",
+      "Linux (Ubuntu 18.04 or equivalent)"
+    ]
+  },
+  "test_timestamp": "2025-09-13T22:49:57.366567"
+}
