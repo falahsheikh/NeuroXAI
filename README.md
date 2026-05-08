@@ -1,4 +1,4 @@
-# Neuroimaging Slice Viewer with XAI Analysis
+# NeuroXAI: Neuroimaging Slice Viewer with XAI Analysis
 
 A comprehensive medical imaging application for neuroimaging slice visualization with explainable AI analysis for early Alzheimer's disease detection. This application consists of two main components: a neuroimaging slice viewer for medical image analysis and an XAI (Explainable AI) analysis tool for automated brain scan interpretation.
 
