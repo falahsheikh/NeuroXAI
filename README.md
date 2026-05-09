@@ -595,12 +595,12 @@ free -h  # Memory
 - Email: sheikhfalah.sheikhha@ucalgary.ca
 - GitHub: [@falahsheikh](https://github.com/falahsheikh)
 - Institution: University of Calgary
-- Lab: Advanced Database Systems and Applications (ADSA) Lab
+- Lab: Data and Network Sciences & Applications Lab (DANSA) Lab
 - Funding: Alberta Innovates Summer Research Studentship
 
 ## Institutional Affiliation
 
-This project was developed at the **Advanced Database Systems and Applications (ADSA) Lab**, University of Calgary, with funding support from **Alberta Innovates Summer Research Studentship**.
+This project was developed at the **Data and Network Sciences & Applications Lab (DANSA) Lab**, University of Calgary, with funding support from **Alberta Innovates Summer Research Studentship**.
 
 The research focuses on advancing medical imaging analysis through explainable artificial intelligence techniques, contributing to early detection and diagnosis of neurodegenerative diseases.
 
@@ -644,26 +644,41 @@ Please contact: sheikhfalah.sheikhha@ucalgary.ca
 If you use this software in your research, please cite:
 
 ```bibtex
-@software{sheikh2024neuroimaging,
+@software{sheikh2025neuroimaging,
   title={Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection},
   author={Sheikh, Falah and others},
-  year={2024},
-  institution={Advanced Database Systems and Applications (ADSA) Lab, University of Calgary},
+  year={2025},
+  institution={Data and Network Sciences & Applications Lab (DANSA) Lab, University of Calgary},
   funding={Alberta Innovates Summer Research Studentship},
   url={https://github.com/falahsheikh/NeuroXAI},
   license={CC BY-NC 4.0},
   doi={}, // Add DOI if available
   note={Software for neuroimaging analysis with explainable AI}
 }
+
+@inproceedings{sheikh2026neuroxai,
+  title={NeuroXAI: lightweight explainable early Alzheimer's detection for resource-constrained clinical settings},
+  author={Sheikh, Falah and Al Marouf, Ahmed and Alhajj, Reda and Rokne, Jon George},
+  booktitle={Medical Imaging 2026: Imaging Informatics},
+  volume={13930},
+  pages={139301R},
+  year={2026},
+  organization={SPIE},
+  address={Vancouver, BC, Canada},
+  doi={10.1117/12.3088200},
+  url={https://doi.org/10.1117/12.3088200}
+}
 ```
+
+
 
 ### Alternative Citation Formats
 
 **APA Style:**
-Sheikh, F., et al. (2024). Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection [Computer software]. Advanced Database Systems and Applications (ADSA) Lab, University of Calgary. https://github.com/falahsheikh/NeuroXAI
+Sheikh, F., et al. (2025). Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection [Computer software]. University of Calgary. https://github.com/falahsheikh/NeuroXAI
 
 **IEEE Style:**
-F. Sheikh et al., "Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection," Advanced Database Systems and Applications (ADSA) Lab, University of Calgary, 2024. [Online]. Available: https://github.com/falahsheikh/NeuroXAI
+F. Sheikh et al., "Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection," University of Calgary, 2025. [Online]. Available: https://github.com/falahsheikh/NeuroXAI
 
 ## Contributing
 
@@ -763,7 +778,7 @@ By contributing, you agree that:
 
 ### Funding and Institutional Support
 - **Alberta Innovates** for Summer Research Studentship funding
-- **Advanced Database Systems and Applications (ADSA) Lab, University of Calgary** for research support, infrastructure, and academic guidance
+- **Data and Network Sciences & Applications Lab (DANSA) Lab, University of Calgary** for research support, infrastructure, and academic guidance
 - **University of Calgary** for institutional resources and research environment
 
 ### Technical Dependencies
@@ -790,7 +805,7 @@ By contributing, you agree that:
 **Falah Sheikh et al.**
 - **Email**: sheikhfalah.sheikhha@ucalgary.ca
 - **GitHub**: [@falahsheikh](https://github.com/falahsheikh)
-- **Institution**: Advanced Database Systems and Applications (ADSA) Lab, University of Calgary
+- **Institution**: Data and Network Sciences & Applications Lab (DANSA) Lab, University of Calgary
 
 ### Communication Channels
 
