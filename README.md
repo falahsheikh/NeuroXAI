@@ -73,8 +73,8 @@ If Python is not installed, download from [python.org](https://www.python.org/do
 ### Step 2: Clone Repository
 
 ```bash
-git clone https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection.git
-cd Lightweight_MRI_EAD_Detection
+git clone https://github.com/falahsheikh/NeuroXAI.git
+cd NeuroXAI
 ```
 
 ### Step 3: Create Virtual Environment
@@ -274,7 +274,7 @@ python explainability_visuals.py
 ## Project Structure
 
 ```
-Lightweight_MRI_EAD_Detection/
+NeuroXAI/
 ├── LICENSE                                    # CC BY-NC 4.0 License
 ├── README.md                                  # This documentation
 ├── CITATION.cff                              # Citation information
@@ -308,7 +308,7 @@ Lightweight_MRI_EAD_Detection/
 
 ```bash
 # Navigate to project directory
-cd Lightweight_MRI_EAD_Detection
+cd NeuroXAI
 
 # Test slice viewer imports
 cd Neuroimaging_Slice_Viewer_with_XAI_Analysis_raw
@@ -650,7 +650,7 @@ If you use this software in your research, please cite:
   year={2024},
   institution={Advanced Database Systems and Applications (ADSA) Lab, University of Calgary},
   funding={Alberta Innovates Summer Research Studentship},
-  url={https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection},
+  url={https://github.com/falahsheikh/NeuroXAI},
   license={CC BY-NC 4.0},
   doi={}, // Add DOI if available
   note={Software for neuroimaging analysis with explainable AI}
@@ -660,10 +660,10 @@ If you use this software in your research, please cite:
 ### Alternative Citation Formats
 
 **APA Style:**
-Sheikh, F., et al. (2024). Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection [Computer software]. Advanced Database Systems and Applications (ADSA) Lab, University of Calgary. https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection
+Sheikh, F., et al. (2024). Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection [Computer software]. Advanced Database Systems and Applications (ADSA) Lab, University of Calgary. https://github.com/falahsheikh/NeuroXAI
 
 **IEEE Style:**
-F. Sheikh et al., "Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection," Advanced Database Systems and Applications (ADSA) Lab, University of Calgary, 2024. [Online]. Available: https://github.com/falahsheikh/Lightweight_MRI_EAD_Detection
+F. Sheikh et al., "Neuroimaging Slice Viewer with XAI Analysis for Early Alzheimer's Disease Detection," Advanced Database Systems and Applications (ADSA) Lab, University of Calgary, 2024. [Online]. Available: https://github.com/falahsheikh/NeuroXAI
 
 ## Contributing
 
@@ -674,13 +674,13 @@ Contributions are welcome from the research community. This project encourages c
 1. **Fork the repository**
    ```bash
    # Click 'Fork' on GitHub or use GitHub CLI
-   gh repo fork falahsheikh/Lightweight_MRI_EAD_Detection
+   gh repo fork falahsheikh/NeuroXAI
    ```
 
 2. **Clone your fork**
    ```bash
-   git clone https://github.com/yourusername/Lightweight_MRI_EAD_Detection.git
-   cd Lightweight_MRI_EAD_Detection
+   git clone https://github.com/yourusername/NeuroXAI.git
+   cd NeuroXAI
    ```
 
 3. **Create a feature branch**
