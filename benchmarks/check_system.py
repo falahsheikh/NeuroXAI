@@ -11,7 +11,6 @@ import psutil
 import time
 import gc
 import subprocess
-import pkg_resources
 from pathlib import Path
 import tracemalloc
 
@@ -58,11 +57,13 @@ def test_required_packages():
         'matplotlib',
         'pillow',
         'tkinter',  # Usually built-in with Python
-        'simpleitk',
+        'SimpleITK',
         'nibabel',  # For NIfTI support
         'scipy',
-        'scikit-learn'
+        'scikit-image'
     ]
+    # Import names that differ from the pip package names
+    import_names = {'SimpleITK': 'SimpleITK', 'scikit-image': 'skimage'}
     
     optional_packages = [
         'pandas',
@@ -85,7 +86,7 @@ def test_required_packages():
                 import PIL
                 print(f"✓ pillow: {PIL.__version__}")
             else:
-                pkg = __import__(package)
+                pkg = __import__(import_names.get(package, package))
                 if hasattr(pkg, '__version__'):
                     print(f"✓ {package}: {pkg.__version__}")
                 else:
@@ -261,8 +262,9 @@ def test_medical_imaging():
     
     try:
         import nibabel as nib
+        import numpy as np
         import SimpleITK as sitk
-        
+
         print("✓ NiBabel available for NIfTI support")
         print("✓ SimpleITK available for medical formats")
         

@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "NeuroXAI"
+version: "1.1"
+authors:
+  - family-names: Sheikh
+    given-names: Falah
+repository-code: "https://github.com/falahsheikh/NeuroXAI"
+license: CC-BY-NC-4.0
+preferred-citation:
+  type: conference-paper
+  title: "NeuroXAI: Lightweight Explainable Early Alzheimer's Detection for Resource-Constrained Clinical Settings"
+  authors:
+    - family-names: Sheikh
+      given-names: Falah
+    - family-names: Al Marouf
+      given-names: Ahmed
+    - family-names: Alhajj
+      given-names: Reda
+    - family-names: Rokne
+      given-names: Jon George
+  collection-title: "Medical Imaging 2026: Imaging Informatics"
+  publisher:
+    name: SPIE
+  volume: 13930
+  start: 139301R
+  year: 2026
+  doi: 10.1117/12.3088200

@@ -16,6 +16,11 @@ from datetime import datetime
 import gc
 import tracemalloc
 
+DEFAULT_MODEL_PATH = str(
+    Path(__file__).resolve().parents[1] / "app" / "analysis" / "TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"
+)
+
+
 class ProgramRequirementsTest:
     def __init__(self):
         self.results = {
@@ -89,12 +94,14 @@ class ProgramRequirementsTest:
                 'purpose': 'Scientific computing',
                 'required': False
             },
-            'scikit-learn': {
-                'minimum_version': '0.24.0',
-                'purpose': 'Machine learning utilities',
-                'required': False
+            'scikit-image': {
+                'minimum_version': '0.19.0',
+                'purpose': 'Brain bounding box and morphology',
+                'required': True
             }
         }
+        # Import names that differ from the pip package names
+        import_names = {'simpleitk': 'SimpleITK', 'scikit-image': 'skimage'}
         
         dependencies_status = {}
         all_required_available = True
@@ -108,7 +115,7 @@ class ProgramRequirementsTest:
                     import PIL
                     version = PIL.__version__
                 else:
-                    pkg = __import__(package_name)
+                    pkg = __import__(import_names.get(package_name, package_name))
                     version = getattr(pkg, '__version__', 'unknown')
                 
                 dependencies_status[package_name] = {
@@ -159,10 +166,7 @@ class ProgramRequirementsTest:
         """Test model loading and architecture compatibility"""
         if not model_path:
             # Look for model files
-            possible_paths = [
-                "exnModel/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras",
-                "training/models/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"
-            ]
+            possible_paths = [DEFAULT_MODEL_PATH]
             
             model_path = None
             for path in possible_paths:
@@ -439,10 +443,7 @@ def main():
     
     # Look for model file
     model_path = None
-    possible_paths = [
-        "exnModel/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras",
-        "training/models/TRAINING_WITH_INFLATED_AUGMENTED_DATA_EFV2B0.keras"
-    ]
+    possible_paths = [DEFAULT_MODEL_PATH]
     
     for path in possible_paths:
         if os.path.exists(path):

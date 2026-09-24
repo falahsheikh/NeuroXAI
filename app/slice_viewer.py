@@ -27,123 +27,17 @@ import skimage.measure
 from functools import partial
 from datetime import datetime
 import json
+import importlib.util
 import io
 from PIL import Image, ImageTk
 from loading_window import LoadingWindow
 import time
 
-try:
-    import cv2
-    import scipy.ndimage
-    import tensorflow as tf
-    from tensorflow.keras.models import Model
-    TENSORFLOW_AVAILABLE = True
-except ImportError:
-    print("Warning: TensorFlow or OpenCV not found. XAI functionality will be disabled.")
-    TENSORFLOW_AVAILABLE = False
+# The Analysis Tool runs in its own process and needs TensorFlow and OpenCV; the viewer itself does not.
+TENSORFLOW_AVAILABLE = all(importlib.util.find_spec(m) is not None for m in ("tensorflow", "cv2"))
 
 AXIAL, CORONAL, SAGITTAL = 0, 1, 2
 STATE_NONE, STATE_SLICE, STATE_WL, STATE_ZOOM, STATE_PAN, STATE_SELECT_ZOOM, STATE_DRAW = 0, 1, 2, 3, 4, 5, 6
-
-class XAIProcessor:
-
-    def __init__(self, model_path=None):
-        if not TENSORFLOW_AVAILABLE:
-            raise ImportError("TensorFlow is required for XAI functionality.")
-
-        self.model = None
-        self.model_path = model_path
-        self.IMG_SIZE = (224, 224)
-        self.CLASS_NAMES = ['CN', 'EMCI', 'LMCI']
-
-        self.PREPROCESS_INPUT = tf.keras.applications.efficientnet_v2.preprocess_input
-
-        if self.model_path:
-            self.load_model(self.model_path)
-
-        self.pan_mode = tk.BooleanVar(value=False)
-        self.pan_mode.trace_add('write', self._on_pan_toggle)
-        self.show_axis_scales = tk.BooleanVar(value=True) 
-
-    def load_model(self, model_path):
-        self.model = tf.keras.models.load_model(model_path)
-        self.model_path = model_path
-
-    def _prepare_image(self, slice_data):
-        img_min, img_max = np.min(slice_data), np.max(slice_data)
-        if img_max > img_min:
-            slice_data = 255 * (slice_data - img_min) / (img_max - img_min)
-        else:
-            slice_data = np.zeros_like(slice_data) # Handle flat images
-        slice_data = slice_data.astype(np.uint8)
-
-        rgb_img = cv2.cvtColor(slice_data, cv2.COLOR_GRAY2RGB)
-        resized_img = cv2.resize(rgb_img, self.IMG_SIZE, interpolation=cv2.INTER_AREA)
-
-        array = tf.keras.preprocessing.image.img_to_array(resized_img)
-        original_img = array.copy()
-        array_preprocessed = self.PREPROCESS_INPUT(np.expand_dims(array, axis=0))
-        return original_img, array_preprocessed
-
-    def _find_last_conv_layer(self):
-        for layer in reversed(self.model.layers):
-            if isinstance(layer, tf.keras.layers.Conv2D):
-                return layer.name
-        raise ValueError("No Conv2D layer found in the model.")
-
-    def _make_gradcam_plus_plus(self, img_tensor, class_idx):
-        last_conv_layer_name = self._find_last_conv_layer()
-        grad_model = Model(inputs=self.model.inputs, outputs=[self.model.get_layer(last_conv_layer_name).output, self.model.output])
-
-        with tf.GradientTape() as tape:
-            conv_outputs, predictions = grad_model(img_tensor)
-            class_output = predictions[:, class_idx]
-
-        grads = tape.gradient(class_output, conv_outputs)
-        conv_outputs, grads = conv_outputs[0], grads[0]
-        grads_2 = tf.square(grads)
-        grads_3 = tf.pow(grads, 3)
-        alpha_denom = 2.0 * grads_2 + tf.reduce_sum(conv_outputs * grads_3, axis=(0, 1), keepdims=True) + 1e-7
-        alphas = grads_2 / alpha_denom
-        weights = tf.reduce_sum(alphas * tf.nn.relu(grads), axis=(0, 1))
-        heatmap = tf.reduce_sum(weights * conv_outputs, axis=2)
-        heatmap = tf.nn.relu(heatmap)
-        if tf.reduce_max(heatmap) > 0:
-            heatmap /= tf.reduce_max(heatmap)
-        return tf.image.resize(heatmap[..., tf.newaxis], self.IMG_SIZE, method='bilinear').numpy().squeeze()
-
-    def generate_visualization(self, coronal_slice_data, slice_index):
-        if self.model is None: return None
-
-        original_img, img_array = self._prepare_image(coronal_slice_data)
-        predictions = self.model.predict(img_array, verbose=0)[0]
-        pred_idx = np.argmax(predictions)
-        pred_label = self.CLASS_NAMES[pred_idx]
-        confidence = predictions[pred_idx]
-
-        heatmap = self._make_gradcam_plus_plus(img_array, pred_idx)
-
-        heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap), cv2.COLORMAP_JET)
-        overlay = cv2.addWeighted(cv2.cvtColor(original_img.astype('uint8'), cv2.COLOR_RGB2BGR), 0.5, heatmap_colored, 0.5, 0)
-        overlay = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
-
-        fig = plt.figure(figsize=(12, 4), facecolor='#1E1E1E')
-        gs = gridspec.GridSpec(1, 3, figure=fig, wspace=0.1)
-        fig.suptitle(f"XAI for Coronal Slice {slice_index} | Prediction: {pred_label} ({confidence:.2f})",
-                         fontsize=12, fontweight='bold', color='white')
-        
-        titles = ['Original Slice', 'Grad-CAM++ Heatmap', 'Overlay']
-        images = [original_img.astype('uint8'), heatmap, overlay]
-        cmaps = [None, 'jet', None]
-        
-        for i, (title, img, cmap) in enumerate(zip(titles, images, cmaps)):
-            ax = fig.add_subplot(gs[0, i])
-            ax.imshow(img, cmap=cmap)
-            ax.set_title(title, fontsize=10, color='white')
-            ax.set_xticks([]); ax.set_yticks([])
-        
-        plt.tight_layout(rect=[0, 0, 1, 0.9])
-        return fig
 
 class NumpyEncoder(json.JSONEncoder):
 
@@ -2662,7 +2556,7 @@ class SlicerApp:
             import sys
             
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            script_path = os.path.join(current_dir, "exnModel", "explainability_visuals.py")
+            script_path = os.path.join(current_dir, "analysis", "analysis_tool.py")
             
             subprocess.Popen([sys.executable, script_path])
             self.status_label.config(text="Analysis Tool launched successfully")

@@ -465,6 +465,67 @@ class EnhancedMedicalNavigationToolbar(NavigationToolbar2Tk):
     def add_medical_tools(self):
         ttk.Separator(self, orient='vertical').pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
 
+_RECTIFIERS = {"relu", "relu6", "silu", "swish"}
+
+
+def score_model(model, layer_name=None):
+    """Model that returns the output of layer_name (optional) and the input of the final Dense layer.
+
+    The class scores before the softmax (logits) come from that input; see class_scores().
+    Models that do not end in a Dense layer fall back to their output.
+    """
+    head = model.layers[-1]
+    if isinstance(head, tf.keras.layers.Dense):
+        scores = head.input
+    else:
+        head, scores = None, model.output
+    outputs = scores if layer_name is None else [model.get_layer(layer_name).output, scores]
+    return Model(inputs=model.input, outputs=outputs), head
+
+
+def class_scores(scores, head):
+    if head is None:
+        return scores
+    logits = tf.matmul(scores, tf.convert_to_tensor(head.kernel))
+    return logits if head.bias is None else logits + tf.convert_to_tensor(head.bias)
+
+
+def _guided(fn):
+    """Wrap an activation so its gradient only passes where the input and the incoming gradient are positive."""
+
+    @tf.custom_gradient
+    def guided(x):
+        def grad(upstream):
+            with tf.GradientTape() as tape:
+                tape.watch(x)
+                y = fn(x)
+            dx = tape.gradient(y, x, output_gradients=upstream)
+            return dx * tf.cast(x > 0, dx.dtype) * tf.cast(upstream > 0, dx.dtype)
+
+        return fn(x), grad
+
+    return guided
+
+
+def _clone_layer(layer):
+    if isinstance(layer, tf.keras.layers.ReLU):  # e.g. MobileNetV2's ReLU6 layers
+        relu = lambda x, l=layer: tf.keras.activations.relu(
+            x, negative_slope=l.negative_slope, max_value=l.max_value, threshold=l.threshold
+        )
+        return tf.keras.layers.Activation(_guided(relu), name=layer.name)
+    return layer.__class__.from_config(layer.get_config())
+
+
+def build_guided_model(model):
+    """Copy of model whose rectifying activations use the guided backpropagation rule (Springenberg et al., 2015)."""
+    clone = tf.keras.models.clone_model(model, clone_function=_clone_layer)
+    clone.set_weights(model.get_weights())
+    for layer in clone.layers:
+        if getattr(getattr(layer, "activation", None), "__name__", None) in _RECTIFIERS:
+            layer.activation = _guided(layer.activation)
+    return clone
+
+
 class XAIProcessor:
         
     def __init__(self, model):
@@ -478,6 +539,7 @@ class XAIProcessor:
             'guided_gradcam': self.conv_layers[-1] if self.conv_layers else None,
             'consensus': self.conv_layers[-1] if self.conv_layers else None
         }
+        self._guided_model = None
 
     def _get_conv_layers(self):
         conv_layers = []
@@ -553,84 +615,69 @@ class XAIProcessor:
         return heatmap * mask
         
     def make_gradcam_plus_plus(self, img_array, target_class_idx, layer_name=None):
+        """Grad-CAM++ (Chattopadhay et al., 2018) of the class score before the softmax, normalized to [0, 1]."""
         target_class_idx = self.validate_class_index(target_class_idx)
-        img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32) if isinstance(img_array, np.ndarray) else img_array
-        
+        img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
+
         if layer_name is None:
             layer_name = self.get_layer_for_method('gradcam')
-        
+
         if layer_name is None:
             raise ValueError("No convolutional layer available for Grad-CAM++")
-        
+
         try:
-            grad_model = Model(inputs=self.model.input, outputs=[self.model.get_layer(layer_name).output, self.model.output])
+            grad_model, head = score_model(self.model, layer_name)
         except Exception as e:
             print(f"Error creating gradient model with layer {layer_name}: {e}")
             return np.zeros(IMG_SIZE)
-            
+
         try:
             with tf.GradientTape() as tape:
-                conv_outputs, predictions = grad_model(img_tensor)
-                predictions = tf.convert_to_tensor(predictions) if not isinstance(predictions, tf.Tensor) else predictions
-                if len(predictions.shape) == 1: 
-                    predictions = tf.expand_dims(predictions, 0)
-                elif len(predictions.shape) == 3 and predictions.shape[0] == 1: 
-                    predictions = tf.squeeze(predictions, axis=1)
-                actual_num_classes = predictions.shape[-1]
-                if target_class_idx >= actual_num_classes: 
-                    target_class_idx = actual_num_classes - 1
-                class_output = predictions[:, target_class_idx]
-                
-            grads = tape.gradient(class_output, conv_outputs)
-            if grads is None: 
+                conv_outputs, scores = grad_model(img_tensor, training=False)
+                class_score = class_scores(scores, head)[:, target_class_idx]
+
+            grads = tape.gradient(class_score, conv_outputs)
+            if grads is None:
                 return np.zeros(IMG_SIZE)
-                
+
             conv_outputs, grads = conv_outputs[0], grads[0]
-            alpha_denom = 2.0 * tf.square(grads) + tf.reduce_sum(conv_outputs * tf.pow(grads, 3), axis=[0, 1], keepdims=True) + 1e-7
-            alphas = tf.square(grads) / alpha_denom
+            # alpha_ij^k = g^2 / (2 g^2 + sum_ab(A_ab^k) g^3), with g the gradient at (i, j) of channel k.
+            grads_2, grads_3 = tf.square(grads), tf.pow(grads, 3)
+            alpha_denom = 2.0 * grads_2 + tf.reduce_sum(conv_outputs, axis=[0, 1], keepdims=True) * grads_3
+            alpha_denom = tf.where(alpha_denom != 0.0, alpha_denom, tf.ones_like(alpha_denom))
+            alphas = grads_2 / alpha_denom
             weights = tf.reduce_sum(alphas * tf.nn.relu(grads), axis=[0, 1])
             heatmap = tf.nn.relu(tf.reduce_sum(weights * conv_outputs, axis=2))
             heatmap_max = tf.reduce_max(heatmap)
-            if heatmap_max > 0: 
+            if heatmap_max > 0:
                 heatmap /= heatmap_max
             return tf.squeeze(tf.image.resize(heatmap[..., tf.newaxis], IMG_SIZE, method='bilinear')).numpy()
-            
+
         except Exception as e:
             print(f"Error in grad-cam computation with layer {layer_name}: {e}")
             return np.zeros(IMG_SIZE)
-            
+
     def make_guided_backprop(self, img_array, target_class_idx):
+        """Guided backpropagation (Springenberg et al., 2015) of the class score before the softmax.
+
+        Returns the maximum absolute input gradient over the color channels.
+        """
         target_class_idx = self.validate_class_index(target_class_idx)
         try:
-            img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32) if isinstance(img_array, np.ndarray) else img_array
-            img_tensor = tf.Variable(img_tensor, trainable=True)
-            
+            if self._guided_model is None:
+                self._guided_model = build_guided_model(self.model)
+            guided_scores, head = score_model(self._guided_model)
+            img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
+
             with tf.GradientTape() as tape:
                 tape.watch(img_tensor)
-                predictions = self.model(img_tensor)
-                predictions = tf.convert_to_tensor(predictions) if not isinstance(predictions, tf.Tensor) else predictions
-                if len(predictions.shape) == 1: 
-                    predictions = tf.expand_dims(predictions, 0)
-                elif len(predictions.shape) == 3 and predictions.shape[0] == 1: 
-                    predictions = tf.squeeze(predictions, axis=1)
-                actual_num_classes = predictions.shape[-1]
-                if target_class_idx >= actual_num_classes: 
-                    target_class_idx = actual_num_classes - 1
-                pred_class = predictions[:, target_class_idx]
-                
-            grads = tape.gradient(pred_class, img_tensor)
-            if grads is None: 
+                class_score = class_scores(guided_scores(img_tensor, training=False), head)[:, target_class_idx]
+
+            grads = tape.gradient(class_score, img_tensor)
+            if grads is None:
                 return np.zeros(IMG_SIZE)
-            
-            input_positive = tf.cast(img_tensor > 0, tf.float32)
-            grad_positive = tf.cast(grads > 0, tf.float32)
-            guided_grads = grads * input_positive * grad_positive
-            
-            guided_grads = tf.abs(guided_grads[0])
-            attribution_map = tf.reduce_max(guided_grads, axis=-1)
-            
-            return attribution_map.numpy()
-            
+            return tf.reduce_max(tf.abs(grads[0]), axis=-1).numpy()
+
         except Exception as e:
             print(f"Error in guided backprop: {e}")
             return np.zeros(IMG_SIZE)

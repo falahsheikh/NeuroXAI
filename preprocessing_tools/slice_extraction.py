@@ -1,143 +1,115 @@
-import numpy as np
-import nibabel as nib
-from pathlib import Path
-from scipy.ndimage import zoom
-import matplotlib.pyplot as plt
-from skimage import measure, morphology
-import cv2
+"""Extract 224x224 coronal PNG slices from skull-stripped T1-weighted MRI volumes.
 
-def reorient_to_ras(img: nib.Nifti1Image) -> nib.Nifti1Image:
-    """Reorients a NIfTI image to the RAS (Right-Anterior-Superior) orientation."""
-    return nib.as_closest_canonical(img)
+Input:  <input-dir>/<class>/**/*.nii.gz (or .nii), with <class> in cn, emci, lmci.
+Output: <output-dir>/<class>/<class>_<volume>_s<index>.png.
+
+Each volume is reoriented to RAS. The script takes 30 contiguous coronal slices centered on the
+middle coronal index, crops each slice to the brain bounding box, and pads it to 224x224 without
+distortion. A trailing "_stripped" in a volume name (added by skull_stripping.py) is removed.
+"""
+
+import argparse
+import re
+from pathlib import Path
+
+import cv2
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import nibabel as nib
+import numpy as np
+from scipy.ndimage import zoom
+from skimage import measure, morphology
+
+CLASSES = ("cn", "emci", "lmci")
+IMG_SIZE = (224, 224)
+
+
+def volume_name(path):
+    name = re.sub(r"\.nii(\.gz)?$", "", Path(path).name)
+    return re.sub(r"_stripped$", "", name)
+
 
 def find_brain_bbox(slice_data, threshold_percentile=5):
-    """
-    Finds the bounding box of the brain in a 2D slice to crop out empty space.
-    """
+    """Bounding box (row_min, row_max, col_min, col_max) of the largest foreground region, with 10 px padding."""
     if np.max(slice_data) == 0:
         return 0, slice_data.shape[0], 0, slice_data.shape[1]
-        
     threshold = np.percentile(slice_data[slice_data > 0], threshold_percentile)
-    binary_mask = slice_data > threshold
-    binary_mask = morphology.remove_small_objects(binary_mask, min_size=256)
-    binary_mask = morphology.binary_closing(binary_mask, morphology.disk(5))
-    
-    labeled_mask = measure.label(binary_mask)
-    if labeled_mask.max() == 0:
+    mask = morphology.remove_small_objects(slice_data > threshold, min_size=256)
+    mask = morphology.binary_closing(mask, morphology.disk(5))
+    labels = measure.label(mask)
+    if labels.max() == 0:
         return 0, slice_data.shape[0], 0, slice_data.shape[1]
-        
-    props = measure.regionprops(labeled_mask)
-    largest_region = max(props, key=lambda x: x.area)
-    min_row, min_col, max_row, max_col = largest_region.bbox
-    
-    padding = 10
-    return (max(0, min_row - padding), min(slice_data.shape[0], max_row + padding),
-            max(0, min_col - padding), min(slice_data.shape[1], max_col + padding))
+    min_row, min_col, max_row, max_col = max(measure.regionprops(labels), key=lambda r: r.area).bbox
+    pad = 10
+    return (
+        max(0, min_row - pad),
+        min(slice_data.shape[0], max_row + pad),
+        max(0, min_col - pad),
+        min(slice_data.shape[1], max_col + pad),
+    )
 
-def crop_and_resize_slice(slice_data, target_size=(224, 224)):
-    """Crops and resizes a 2D slice to a target size."""
+
+def crop_and_resize_slice(slice_data, target_size=IMG_SIZE):
+    """Crop to the brain and scale it into a zero-padded target_size canvas, keeping the aspect ratio."""
     min_row, max_row, min_col, max_col = find_brain_bbox(slice_data)
     cropped = slice_data[min_row:max_row, min_col:max_col]
-    
     if cropped.size == 0:
         return np.zeros(target_size, dtype=slice_data.dtype)
-        
     scale = min(target_size[0] / cropped.shape[0], target_size[1] / cropped.shape[1])
     new_shape = (int(cropped.shape[0] * scale), int(cropped.shape[1] * scale))
     resized = zoom(cropped, (new_shape[0] / cropped.shape[0], new_shape[1] / cropped.shape[1]), order=1)
-    
-    final_image = np.zeros(target_size, dtype=resized.dtype)
-    start_h = (target_size[0] - new_shape[0]) // 2
-    start_w = (target_size[1] - new_shape[1]) // 2
-    final_image[start_h:start_h + new_shape[0], start_w:start_w + new_shape[1]] = resized
-    
-    return final_image
+    canvas = np.zeros(target_size, dtype=resized.dtype)
+    top, left = (target_size[0] - new_shape[0]) // 2, (target_size[1] - new_shape[1]) // 2
+    canvas[top : top + new_shape[0], left : left + new_shape[1]] = resized
+    return canvas
+
 
 def save_slice_as_png(slice_data, png_path):
-    """Saves a 2D slice as a normalized PNG image."""
+    """Rotate for display, scale intensities to 0-255 and save as a grayscale PNG."""
     rotated = np.rot90(slice_data, k=1)
     normalized = cv2.normalize(rotated, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    plt.imsave(png_path, normalized, cmap='gray')
+    plt.imsave(png_path, normalized, cmap="gray")
 
-def extract_coronal_slices(base_dir, class_name, slice_step, target_count, target_size):
-    """
-    Extracts, saves coronal slices, and counts the number of unique subjects used.
-    """
-    print(f"-> Processing class: {class_name.upper()}")
-    
-    input_dir = base_dir / "stripped_data" / class_name
-    output_dir = base_dir / class_name
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    files_saved = 0
-    # Use a set to automatically handle unique subject IDs
-    subjects_used = set()
-    nii_files = sorted(list(input_dir.rglob("*.nii.gz")))
-    
-    for nii_file in nii_files:
-        if files_saved >= target_count:
-            print(f"   Target of {target_count} files reached for class '{class_name}'.")
+
+def extract_class(input_dir, output_dir, class_name, num_slices=30, per_class_cap=1000):
+    """Write slices for one class and return (number of PNG files, number of volumes used)."""
+    out = Path(output_dir) / class_name
+    out.mkdir(parents=True, exist_ok=True)
+    volumes = sorted([*(Path(input_dir) / class_name).rglob("*.nii.gz"), *(Path(input_dir) / class_name).rglob("*.nii")])
+    saved, used = 0, set()
+    for path in volumes:
+        if saved >= per_class_cap:
             break
         try:
-            img = nib.load(nii_file)
-            data = reorient_to_ras(img).get_fdata()
-            # The base filename without extensions serves as the subject/scan ID
-            base_name = nii_file.stem.replace(".nii", "")
-            
-            # Medial temporal region: 30 slices around the center
-            mid = data.shape[1] // 2
-            start_slice = max(0, mid - 15)
-            end_slice = min(data.shape[1], mid + 15)
-            
-            for idx in range(start_slice, end_slice, slice_step):
-                if files_saved >= target_count:
-                    break
-                    
-                coronal_slice = crop_and_resize_slice(data[:, idx, :], target_size)
-                
-                if np.sum(coronal_slice) > 0:
-                    filename = f"{class_name}_{base_name}_s{idx:03d}.png"
-                    png_path = output_dir / filename
-                    save_slice_as_png(coronal_slice, png_path)
-                    files_saved += 1
-                    # Add the subject ID to our set. Duplicates are ignored.
-                    subjects_used.add(base_name)
-                    
-        except Exception as e:
-            print(f"    Could not process {nii_file.name}: {e}")
-            
-    print(f" Finished '{class_name}'. Total PNGs: {files_saved}. Unique subjects used: {len(subjects_used)}")
-    return len(subjects_used)
+            data = nib.as_closest_canonical(nib.load(path)).get_fdata()
+        except Exception as e:  # unreadable volumes are skipped, as in the original run
+            print(f"  skipped {path}: {e}")
+            continue
+        mid = data.shape[1] // 2
+        for idx in range(max(0, mid - num_slices // 2), min(data.shape[1], mid + num_slices // 2)):
+            if saved >= per_class_cap:
+                break
+            coronal = crop_and_resize_slice(data[:, idx, :])
+            if np.sum(coronal) > 0:
+                save_slice_as_png(coronal, out / f"{class_name}_{volume_name(path)}_s{idx:03d}.png")
+                saved += 1
+                used.add(path)
+    return saved, len(used)
 
-def main():
-    """Main function to configure and run the dataset extraction process."""
-    base_dir = Path.home() / "Desktop/research2025"
-    class_names = ['cn', 'emci', 'lmci']
-    
-    slice_step = 1
-    target_files_per_class = 1000
-    target_image_size = (224, 224)
-    subject_counts = {}
-    
-    print("Starting Coronal Slice Extraction...")
-    
-    for class_name in class_names:
-        num_subjects = extract_coronal_slices(
-            base_dir=base_dir,
-            class_name=class_name,
-            slice_step=slice_step,
-            target_count=target_files_per_class,
-            target_size=target_image_size
-        )
-        subject_counts[class_name] = num_subjects
-        
-    print("\n" + "="*40)
-    print(" DATASET SUMMARY")
-    print("="*40)
-    for class_name, count in subject_counts.items():
-        print(f"  - {class_name.upper()}: {count} unique subjects")
-    print("="*40)
-    print("\n All classes processed successfully!")
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--input-dir", required=True, help="folder with cn/, emci/ and lmci/ subfolders of skull-stripped volumes")
+    p.add_argument("--output-dir", required=True, help="folder for the PNG slices")
+    p.add_argument("--num-slices", type=int, default=30, help="coronal slices per volume")
+    p.add_argument("--per-class-cap", type=int, default=1000, help="maximum number of slices per class")
+    args = p.parse_args(argv)
+    for class_name in CLASSES:
+        saved, n_volumes = extract_class(args.input_dir, args.output_dir, class_name, args.num_slices, args.per_class_cap)
+        print(f"{class_name}: {saved} slices from {n_volumes} volumes")
+
 
 if __name__ == "__main__":
     main()
