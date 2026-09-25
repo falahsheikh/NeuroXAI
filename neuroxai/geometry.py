@@ -73,3 +73,8 @@ def zoom_limits(size, zoom, center):
     width = min(size, size / zoom)
     low = min(max(center * size - width / 2, 0.0), size - width)
     return low, low + width
+
+
+def format_intensity(value):
+    """Window or level value for display: no decimals for large values, 3 significant digits for small values."""
+    return f"{value:.0f}" if abs(value) >= 100 else f"{value:.3g}"

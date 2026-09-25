@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
 from ..annotations import DRAWING, MEASUREMENT
-from ..geometry import format_mm, ticks, zoom_limits
+from ..geometry import format_intensity, format_mm, ticks, zoom_limits
 from ..volume import AXIS_LABELS, FLIPPED_VERTICAL, IN_PLANE_AXES, VIEWS
 from .layout import VIEW_COLORS
 
@@ -180,7 +180,7 @@ class RenderingMixin:
         text = (
             f"{name.upper()}\n"
             f"Slice: {index}/{self.volume.shape[plane] - 1} ({position_mm:.1f} mm)\n"
-            f"W: {self.window:.0f} L: {self.level:.0f} | Z: {self.zoom[name]:.1f}x"
+            f"W: {format_intensity(self.window)} L: {format_intensity(self.level)} | Z: {self.zoom[name]:.1f}x"
         )
         ax.text(
             0.02,

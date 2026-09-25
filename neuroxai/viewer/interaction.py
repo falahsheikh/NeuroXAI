@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 
+from ..geometry import format_intensity
 from ..volume import IN_PLANE_AXES, VIEWS
 
 # Cursor and status message for each tool mode. Only one mode can be on.
@@ -61,8 +62,8 @@ class InteractionMixin:
         try:
             self.window_slider.set(self.window)
             self.level_slider.set(self.level)
-            self.window_value.config(text=f"{self.window:.0f}")
-            self.level_value.config(text=f"{self.level:.0f}")
+            self.window_value.config(text=format_intensity(self.window))
+            self.level_value.config(text=format_intensity(self.level))
             for plane, slider in self.slice_sliders.items():
                 if self.volume is None:
                     self.slice_values[plane].config(text="0/0")

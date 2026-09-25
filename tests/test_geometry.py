@@ -2,7 +2,16 @@ import math
 
 import pytest
 
-from neuroxai.geometry import area_mm2, distance_mm, format_mm, nice_step, polygon_area, ticks, zoom_limits
+from neuroxai.geometry import (
+    area_mm2,
+    distance_mm,
+    format_intensity,
+    format_mm,
+    nice_step,
+    polygon_area,
+    ticks,
+    zoom_limits,
+)
 
 
 def test_distance_uses_the_spacing_of_each_axis():
@@ -46,3 +55,7 @@ def test_zoom_limits_stay_inside_the_image():
     assert zoom_limits(100, 4.0, 0.5) == pytest.approx((37.5, 62.5))
     assert zoom_limits(100, 4.0, 0.0) == pytest.approx((0.0, 25.0))
     assert zoom_limits(100, 4.0, 1.0) == pytest.approx((75.0, 100.0))
+
+
+def test_format_intensity():
+    assert [format_intensity(v) for v in (584.4, -1024.0, 0.5, 1.0, 12.345)] == ["584", "-1024", "0.5", "1", "12.3"]
