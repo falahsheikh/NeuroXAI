@@ -15,7 +15,9 @@ NeuroXAI has two desktop applications:
   early mild cognitive impairment (EMCI) or late mild cognitive impairment (LMCI).
   It shows Grad-CAM++, Guided Grad-CAM++ and consensus maps for each prediction.
 
-![Analysis Tool output for one coronal slice](docs/images/analysis_example.png)
+![Analysis Tool: explanation maps for a coronal slice of the MNI152 template](docs/images/analysis_example.png)
+
+*The explanation maps of the Analysis Tool for a coronal slice of the MNI152 template (see [Images](#images)).*
 
 > **Note:** NeuroXAI is research software. It is not a medical device. Do not use it for diagnosis.
 
@@ -77,6 +79,8 @@ Letters at the edges of each view show the directions.
 Measurements use the voxel size of each axis.
 
 ![Slice Viewer: axial, coronal and sagittal views with a distance, an area and a drawing](docs/images/viewer_views.png)
+
+*The Slice Viewer with the MNI152 template (see [Images](#images)).*
 
 ## Analysis Tool
 
@@ -171,6 +175,16 @@ python -m benchmarks.benchmark --image <slice.png> --output results.json
 (8 CPU cores, 8 GB of memory, macOS).
 The paper measured the first Grad-CAM++ call, which includes the time to build the TensorFlow graph.
 The benchmark script measures each operation after one warm-up call.
+
+## Images
+
+The images in this README show the MNI ICBM152 2009a nonlinear symmetric template
+(Fonov et al., *NeuroImage* 47, S102, 2009), from [nilearn](https://nilearn.github.io).
+The template is an average of many brains. It is not the image of a patient, and it is not ADNI data.
+The ADNI data use agreement does not permit the publication of participant-level images.
+
+Copyright (C) 1993-2009 Louis Collins, McConnell Brain Imaging Centre,
+Montreal Neurological Institute, McGill University.
 
 ## Repository contents
 
