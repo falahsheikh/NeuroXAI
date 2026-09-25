@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import nibabel as nib
 import numpy as np
 
-import slice_extraction
+from neuroxai.preprocessing import extract_slices
 
 
 def write_volume(path, seed):
@@ -16,12 +16,20 @@ def write_volume(path, seed):
 
 
 def test_names_count_and_size(tmp_path):
-    for i, name in enumerate(["cn", "emci", "lmci"]):
+    for i, name in enumerate(extract_slices.CLASSES):
         write_volume(tmp_path / "in" / name / f"ADNI_002_S_000{i}_stripped.nii.gz", seed=i)
 
-    slice_extraction.main(["--input-dir", str(tmp_path / "in"), "--output-dir", str(tmp_path / "out"), "--per-class-cap", "25"])
+    extract_slices.main(
+        ["--input-dir", str(tmp_path / "in"), "--output-dir", str(tmp_path / "out"), "--per-class-cap", "25"]
+    )
 
     files = sorted(p.name for p in (tmp_path / "out" / "cn").iterdir())
     # The middle coronal index is 40, so the 30-slice window is 25-54; the cap keeps the first 25.
     assert files == [f"cn_ADNI_002_S_0000_s{i:03d}.png" for i in range(25, 50)]
     assert plt.imread(tmp_path / "out" / "cn" / files[0]).shape[:2] == (224, 224)
+    assert len(list((tmp_path / "out" / "lmci").iterdir())) == 25
+
+
+def test_volume_name():
+    assert extract_slices.volume_name("a/ADNI_x_stripped.nii.gz") == "ADNI_x"
+    assert extract_slices.volume_name("b.nii") == "b"
